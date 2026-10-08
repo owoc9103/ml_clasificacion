@@ -6,7 +6,7 @@ Material basado en el repositorio [fin-ml](https://github.com/tatsath/fin-ml) (C
 
 | Archivo | Descripción |
 |---------|-------------|
-| `Bitcoin_Estrategia_Clasificacion_Colab.ipynb` | Notebook principal (Google Colab) |
+| `Bitcoin_Estrategia_Clasificacion_Colab.ipynb` | Notebook principal (Google Colab): **mismo flujo/código que fin-ml** + interpretaciones en español |
 | `data/BitstampData_sample.csv` | Muestra Bitstamp (minutos); datos completos en Kaggle del libro |
 
 ## Colab
