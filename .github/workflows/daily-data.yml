@@ -1,0 +1,39 @@
+name: Daily market data and briefing
+
+on:
+  schedule:
+    # 13:00 UTC ≈ 8:00 Bogotá (ajusta si hace falta)
+    - cron: "0 13 * * 1-5"
+  workflow_dispatch:
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: quant-fund-system
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Instalar quant-fund
+        run: pip install -e ".[dev]"
+      - name: Fetch hasta hoy
+        run: python scripts/fetch_data.py --intervals 1d
+      - name: Indicadores
+        run: python scripts/make_dataset.py --intervals 1d
+      - name: Reentrenar modelos (cada retrain_every_days)
+        run: python scripts/maybe_retrain.py --interval 1d
+      - name: Briefing (signal_journal)
+        working-directory: signal_journal
+        run: |
+          pip install -r requirements.txt
+          pip install -e ../quant-fund-system
+          python scripts/collect_morning.py --replace
+      - name: Artefacto briefing
+        uses: actions/upload-artifact@v4
+        with:
+          name: signal-journal-csv
+          path: signal_journal/data/signal_journal.csv
+          if-no-files-found: warn

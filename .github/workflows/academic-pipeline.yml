@@ -1,0 +1,64 @@
+name: Academic Trading Pipeline
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+  workflow_dispatch:
+  schedule:
+    - cron: "40 14 * * 1-5"
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: quant-fund-system
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Instalar paquete
+        run: pip install -e ".[dev]"
+      - name: Tests unitarios
+        run: pytest tests/test_config.py tests/test_models_train.py tests/test_registry.py tests/test_train_dates.py -q --no-cov
+
+  pipeline:
+    if: github.event_name == 'workflow_dispatch' || github.event_name == 'schedule'
+    needs: test
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: quant-fund-system
+    env:
+      ALPACA_API_KEY: ${{ secrets.ALPACA_API_KEY }}
+      ALPACA_SECRET_KEY: ${{ secrets.ALPACA_SECRET_KEY }}
+      DRY_RUN: "true"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Instalar paquete
+        run: pip install -e ".[dev]"
+      - name: Descargar OHLCV
+        run: python scripts/fetch_data.py --intervals 1d
+      - name: Construir datasets
+        run: python scripts/make_dataset.py --intervals 1d
+      - name: Entrenar y comparar modelos
+        run: python scripts/train_models.py --start 2018-01-01 --end $(date -u +%Y-%m-%d) --interval 1d
+      - name: Paper trading (modo paper)
+        run: python scripts/run_live.py --mode paper || echo "run_live omitido"
+      - name: Subir reportes
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: reports-and-artifacts
+          path: |
+            quant-fund-system/reports/
+            quant-fund-system/artifacts/1d/models/
+          if-no-files-found: ignore

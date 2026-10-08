@@ -1,0 +1,90 @@
+{
+  "interval": "1d",
+  "rows": 42236,
+  "features": 35,
+  "cv": {
+    "folds": [
+      {
+        "roc_auc": 0.5182505340971855,
+        "log_loss": 0.6996673896663211,
+        "brier": 0.2530963493688388,
+        "fold": 1,
+        "n_train": 35160,
+        "n_val": 7028
+      },
+      {
+        "roc_auc": 0.5364814867613084,
+        "log_loss": 0.697038566654051,
+        "brier": 0.2517142874159946,
+        "fold": 2,
+        "n_train": 35157,
+        "n_val": 7031
+      },
+      {
+        "roc_auc": 0.5097967094935023,
+        "log_loss": 0.7162891311532795,
+        "brier": 0.26014272670673266,
+        "fold": 3,
+        "n_train": 35183,
+        "n_val": 7029
+      },
+      {
+        "roc_auc": 0.5189319188326889,
+        "log_loss": 0.7063738712993515,
+        "brier": 0.256056874589505,
+        "fold": 4,
+        "n_train": 35146,
+        "n_val": 7030
+      },
+      {
+        "roc_auc": 0.49083323882271257,
+        "log_loss": 0.7269774396524203,
+        "brier": 0.26553759291115736,
+        "fold": 5,
+        "n_train": 35158,
+        "n_val": 7030
+      }
+    ],
+    "oof": {
+      "roc_auc": 0.5132575689127542,
+      "log_loss": 0.7092692783540144,
+      "brier": 0.2573095661413832,
+      "oof_n": 35148
+    }
+  },
+  "metrics": {
+    "oof_raw": {
+      "roc_auc": 0.5132575689127542,
+      "log_loss": 0.7092692783540144,
+      "brier": 0.2573095661413832
+    },
+    "oof_calibrated": {
+      "roc_auc": 0.5157132553816905,
+      "log_loss": 0.6925844894938415,
+      "brier": 0.24972434968236581
+    }
+  },
+  "artifacts": {
+    "quarter_models": [
+      "artifacts\\1d\\model_2022Q1.joblib",
+      "artifacts\\1d\\model_2022Q2.joblib",
+      "artifacts\\1d\\model_2022Q3.joblib",
+      "artifacts\\1d\\model_2022Q4.joblib",
+      "artifacts\\1d\\model_2023Q1.joblib",
+      "artifacts\\1d\\model_2023Q2.joblib",
+      "artifacts\\1d\\model_2023Q3.joblib",
+      "artifacts\\1d\\model_2023Q4.joblib",
+      "artifacts\\1d\\model_2024Q1.joblib",
+      "artifacts\\1d\\model_2024Q2.joblib",
+      "artifacts\\1d\\model_2024Q3.joblib",
+      "artifacts\\1d\\model_2024Q4.joblib"
+    ],
+    "model_all": "artifacts\\1d\\model_all.joblib",
+    "feature_meta": "artifacts\\1d\\feature_meta.json"
+  },
+  "calibration_curve": "reports\\calibration_curve_1d.png",
+  "date_range": {
+    "start": "2010-01-01",
+    "end": "2024-12-31"
+  }
+}

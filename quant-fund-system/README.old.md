@@ -1,0 +1,1 @@
+# QuantFund MVP\n\nMedium-frequency ETF quant system (Momentum + Mean Reversion) with calibrated probabilities and event-driven backtests.\n

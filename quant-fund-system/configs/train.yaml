@@ -1,0 +1,29 @@
+cost_bps: 3
+# Ventana de entrenamiento (maybe_retrain.py y train_models.py)
+train_start: '2018-01-01'
+train_end: today
+# Reentrenar si el último artefacto tiene más de N días (run_daily_data / briefing)
+retrain_every_days: 7
+cv_splits: 5
+purge_days: 5
+embargo_days: 2
+reports_dir: reports
+
+# Modelo usado por run_live / live_engine (clave en MODEL_NAMES)
+live_model: xgboost
+
+# Entrenar todos con: python scripts/train_models.py
+models:
+  - logistic_regression
+  - decision_tree
+  - random_forest
+  - gradient_boosting
+  - xgboost
+  - svm
+  - knn
+  - naive_bayes
+
+intervals:
+  - '1d'
+  - '60m'
+  - '120m'

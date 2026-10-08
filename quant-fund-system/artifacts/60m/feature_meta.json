@@ -1,0 +1,22 @@
+{
+  "features": [
+    "r_5",
+    "r_10",
+    "r_20",
+    "macd",
+    "macd_signal",
+    "macd_hist",
+    "adx_14",
+    "sharpe_20",
+    "rsi_2",
+    "rsi_14",
+    "ema20_z",
+    "%b",
+    "gap_z",
+    "range_intraday",
+    "vol_z",
+    "autocorr_1",
+    "autocorr_5",
+    "atr_14"
+  ]
+}

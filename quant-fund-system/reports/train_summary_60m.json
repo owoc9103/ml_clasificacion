@@ -1,0 +1,82 @@
+{
+  "interval": "60m",
+  "rows": 20472,
+  "features": 18,
+  "cv": {
+    "folds": [
+      {
+        "roc_auc": 0.4979365448307922,
+        "log_loss": 0.703770122303049,
+        "brier": 0.2547015383009177,
+        "fold": 1,
+        "n_train": 16524,
+        "n_val": 3444
+      },
+      {
+        "roc_auc": 0.49807752959398943,
+        "log_loss": 0.7089520791608432,
+        "brier": 0.2567913987342831,
+        "fold": 2,
+        "n_train": 16824,
+        "n_val": 3396
+      },
+      {
+        "roc_auc": 0.5019519252803817,
+        "log_loss": 0.7239134757778666,
+        "brier": 0.2634391283078234,
+        "fold": 3,
+        "n_train": 16740,
+        "n_val": 3444
+      },
+      {
+        "roc_auc": 0.5329739703909995,
+        "log_loss": 0.6905547711618176,
+        "brier": 0.24855406403761776,
+        "fold": 4,
+        "n_train": 16692,
+        "n_val": 3444
+      },
+      {
+        "roc_auc": 0.5195664731039653,
+        "log_loss": 0.6969767586642125,
+        "brier": 0.25149585925550066,
+        "fold": 5,
+        "n_train": 16956,
+        "n_val": 3264
+      }
+    ],
+    "oof": {
+      "roc_auc": 0.5098230152159959,
+      "log_loss": 0.7049050344151476,
+      "brier": 0.2550284090782509,
+      "oof_n": 16992
+    }
+  },
+  "metrics": {
+    "oof_raw": {
+      "roc_auc": 0.5098230152159959,
+      "log_loss": 0.7049050344151476,
+      "brier": 0.2550284090782509
+    },
+    "oof_calibrated": {
+      "roc_auc": 0.5162200994045762,
+      "log_loss": 0.685292490993203,
+      "brier": 0.24610416349575115
+    }
+  },
+  "artifacts": {
+    "quarter_models": [
+      "artifacts\\60m\\model_2024Q1.joblib",
+      "artifacts\\60m\\model_2024Q2.joblib",
+      "artifacts\\60m\\model_2024Q3.joblib",
+      "artifacts\\60m\\model_2024Q4.joblib"
+    ],
+    "model_all": "artifacts\\60m\\model_all.joblib",
+    "feature_meta": "artifacts\\60m\\feature_meta.json"
+  },
+  "calibration_curve": "reports\\calibration_curve_60m.png",
+  "date_range": {
+    "start": "2024-01-01",
+    "end": "2024-12-31"
+  }
+}

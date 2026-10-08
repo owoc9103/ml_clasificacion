@@ -1,0 +1,77 @@
+{
+  "interval": "5d",
+  "rows": 6372,
+  "features": 30,
+  "cv": {
+    "folds": [
+      {
+        "roc_auc": 0.6245203287398823,
+        "log_loss": 0.6586419872091406,
+        "brier": 0.2329445312368509,
+        "fold": 1,
+        "n_train": 5316,
+        "n_val": 1056
+      },
+      {
+        "roc_auc": 0.6427723857853374,
+        "log_loss": 0.6839834590582591,
+        "brier": 0.2422702274721115,
+        "fold": 2,
+        "n_train": 5316,
+        "n_val": 1056
+      },
+      {
+        "roc_auc": 0.6525772261980252,
+        "log_loss": 0.6877031376998183,
+        "brier": 0.24288013694154165,
+        "fold": 3,
+        "n_train": 5316,
+        "n_val": 1056
+      },
+      {
+        "roc_auc": 0.6275137741046832,
+        "log_loss": 0.661862866910948,
+        "brier": 0.23218008974531662,
+        "fold": 4,
+        "n_train": 5316,
+        "n_val": 1056
+      },
+      {
+        "roc_auc": 0.6112311868106617,
+        "log_loss": 0.6940925834348135,
+        "brier": 0.24810220935625746,
+        "fold": 5,
+        "n_train": 5316,
+        "n_val": 1056
+      }
+    ],
+    "oof": {
+      "roc_auc": 0.6491768809230826,
+      "log_loss": 0.6772568068625958,
+      "brier": 0.2396754389504156,
+      "oof_n": 5280
+    }
+  },
+  "metrics": {
+    "oof_raw": {
+      "roc_auc": 0.6491768809230826,
+      "log_loss": 0.6772568068625958,
+      "brier": 0.2396754389504156
+    },
+    "oof_calibrated": {
+      "roc_auc": 0.6530724412512855,
+      "log_loss": 0.6448078243143835,
+      "brier": 0.22851589769095182
+    }
+  },
+  "artifacts": {
+    "quarter_models": [],
+    "model_all": "artifacts\\5d\\model_all.joblib",
+    "feature_meta": "artifacts\\5d\\feature_meta.json"
+  },
+  "calibration_curve": "reports\\calibration_curve_5d.png",
+  "date_range": {
+    "start": "2010-01-01",
+    "end": "2024-12-31"
+  }
+}

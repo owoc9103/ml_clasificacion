@@ -1,0 +1,16 @@
+cat > .dockerignore << 'EOF'
+.git
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.log
+.venv/
+data/
+artifacts/
+cache/
+dist/
+build/
+*.parquet
+*.csv
+EOF

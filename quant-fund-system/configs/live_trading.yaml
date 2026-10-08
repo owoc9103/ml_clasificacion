@@ -1,0 +1,56 @@
+# Live Trading Configuration
+
+# Broker settings (Alpaca)
+broker:
+  name: "alpaca"
+  base_url: "https://paper-api.alpaca.markets"  # Paper trading
+  # For live: "https://api.alpaca.markets"
+
+# API credentials (set via environment variables for security)
+# ALPACA_API_KEY=your_key_here
+# ALPACA_SECRET_KEY=your_secret_here
+
+# Trading parameters (same as backtest optimal)
+strategy:
+  interval: "1d"
+  momo_weight: 0.3
+  use_regime_filter: false
+  use_vol_regime: false
+
+risk:
+  annual_vol_target: 0.20
+  max_drawdown: 0.12
+  per_trade_risk: 0.015
+  daily_loss_stop: 0.01
+  atr_stop_mult: 3.0
+  kelly_cap: 0.30
+
+costs:
+  commission_bps: 0.0  # Alpaca is commission-free
+  slippage_bps: 1.0    # Assume 1bp slippage
+
+# Position limits
+limits:
+  max_position_size: 0.30  # 30% max in any single ETF
+  min_position_size: 0.01  # 1% minimum
+  max_num_positions: 12    # Max concurrent positions
+
+# Execution
+execution:
+  order_type: "market"  # or "limit"
+  time_in_force: "day"
+  fill_timeout_seconds: 30
+
+# Schedule (US market hours)
+schedule:
+  trading_days: ["MON", "TUE", "WED", "THU", "FRI"]
+  signal_generation_time: "09:45"  # 15min after open
+  execution_time: "09:50"           # Execute signals
+  reconciliation_time: "16:05"      # After market close
+
+# Monitoring
+monitoring:
+  slack_webhook: null  # Optional: Slack notifications
+  email_alerts: null    # Optional: Email for errors
+  log_level: "INFO"
+  log_dir: "logs/live"

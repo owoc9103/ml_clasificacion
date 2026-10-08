@@ -1,0 +1,7 @@
+eod_start: '2012-01-01'
+# today | auto | latest → siempre hasta el día actual (ver fetch_data.py)
+eod_end: today
+intervals:
+  - '1d'
+  - '60m'
+  - '120m'
