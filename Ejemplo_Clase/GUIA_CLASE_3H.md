@@ -8,7 +8,7 @@
 
 ## Durante la sesión
 
-Use las tablas **“Paso a paso — aplicación”** y **“Paso a paso — modelos”** del notebook: en cada bloque, lea la tabla antes de ejecutar código (2–3 min de narración).
+Use las tablas **“Paso a paso — aplicación”** y **“Paso a paso — modelos”** del notebook. En clase, **ejecuten celda a celda**: cada bloque markdown **Paso A/B/C…** va seguido de **una sola operación** en código.
 
 | Min | Acción |
 |-----|--------|
