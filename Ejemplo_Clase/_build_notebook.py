@@ -18,6 +18,30 @@ def code(text: str):
     }
 
 
+def step_md(step: str, title: str, hace: str, mirar: str, trading: str = "", ml: str = ""):
+    """Markdown pedagógico uniforme antes de cada celda de código."""
+    lines = [
+        f"**{step} — {title}**\n\n",
+        f"- **Qué hace:** {hace}\n",
+        f"- **Qué mirar en la salida:** {mirar}\n",
+    ]
+    if trading:
+        lines.append(f"- **Lectura trading (Bitcoin):** {trading}\n")
+    if ml:
+        lines.append(f"- **Lectura ML:** {ml}\n")
+    return md("".join(lines))
+
+
+def post_md(mirar: str, trading: str = "", ml: str = ""):
+    """Interpretación breve después de ejecutar (opcional)."""
+    lines = ["**Después de ejecutar:**\n\n", f"- {mirar}\n"]
+    if trading:
+        lines.append(f"- *Trading:* {trading}\n")
+    if ml:
+        lines.append(f"- *ML:* {ml}\n")
+    return md("".join(lines))
+
+
 cells = []
 
 cells.append(md("""# Estrategia Bitcoin con clasificación — **sesión 3 horas**
@@ -103,23 +127,39 @@ cells.append(md("""<a id='1'></a>
 Mismas familias que el notebook original: `pandas`, `sklearn`, visualización y (opcional) redes vía `MLPClassifier` — equivalente práctico a la red shallow del master template en Colab sin Keras.
 """))
 
-cells.append(md("""**Paso 2.1a — Entorno Colab:** detecta si estamos en Colab e instala dependencias si hace falta.
-"""))
+cells.append(step_md(
+    "Paso 2.1a", "Detectar Colab",
+    "Comprueba si el notebook corre en Google Colab.",
+    "Debe imprimir `Colab: True` o `False`.",
+    ml="En local no hace falta `pip`; en Colab instalamos paquetes si faltan.",
+))
 
 cells.append(code("""try:
     import google.colab
     IN_COLAB = True
 except ImportError:
     IN_COLAB = False
-
-if IN_COLAB:
-    !pip -q install seaborn scikit-learn
-
 print('Colab:', IN_COLAB)
 """))
 
-cells.append(md("""**Paso 2.1b — Importar librerías:** mismas familias que fin-ml (`pandas`, `sklearn`, gráficos).
+cells.append(step_md(
+    "Paso 2.1b", "Instalar dependencias (solo Colab)",
+    "Instala `seaborn` y `scikit-learn` si estamos en Colab.",
+    "Si no estás en Colab, esta celda no instala nada (está bien).",
+))
+
+cells.append(code("""if IN_COLAB:
+    !pip -q install seaborn scikit-learn
+else:
+    print('Entorno local: usa tu venv / conda.')
 """))
+
+cells.append(step_md(
+    "Paso 2.1c", "NumPy, Pandas y gráficos",
+    "Importa herramientas para tablas y visualización.",
+    "Sin errores de importación.",
+    trading="Aquí manipularemos precios minuto a minuto (OHLCV).",
+))
 
 cells.append(code("""import warnings
 warnings.filterwarnings('ignore')
@@ -130,19 +170,47 @@ import matplotlib.pyplot as plt
 from pandas import read_csv, set_option
 from pandas.plotting import scatter_matrix
 import seaborn as sns
+"""))
 
-from sklearn.preprocessing import StandardScaler
-from sklearn.model_selection import train_test_split, KFold, cross_val_score, GridSearchCV, validation_curve
-from sklearn.linear_model import LogisticRegression
+cells.append(step_md(
+    "Paso 2.1d", "Scikit-learn — preparación y validación",
+    "Importa partición de datos, CV y escalado.",
+    "Nombres como `train_test_split`, `GridSearchCV`.",
+    ml="Estas funciones implementan la plantilla maestra de clasificación.",
+))
+
+cells.append(code("""from sklearn.preprocessing import StandardScaler
+from sklearn.model_selection import (
+    train_test_split, KFold, cross_val_score, GridSearchCV, validation_curve,
+)
+"""))
+
+cells.append(step_md(
+    "Paso 2.1e", "Scikit-learn — modelos",
+    "Importa los clasificadores que compararemos (como fin-ml).",
+    "Lista de clases sin error.",
+    ml="Cada algoritmo es un candidato para aproximar la etiqueta SMA.",
+))
+
+cells.append(code("""from sklearn.linear_model import LogisticRegression
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
 from sklearn.naive_bayes import GaussianNB
 from sklearn.neural_network import MLPClassifier
 from sklearn.ensemble import AdaBoostClassifier, GradientBoostingClassifier, RandomForestClassifier
-from sklearn.metrics import classification_report, confusion_matrix, accuracy_score
+"""))
 
+cells.append(step_md(
+    "Paso 2.1f", "Métricas y guardado",
+    "Importa métricas de clasificación y `pickle` para persistir el modelo.",
+    "Funciones `accuracy_score`, `confusion_matrix`, etc.",
+    trading="Precision/recall traducen errores en falsas compras o subidas perdidas.",
+))
+
+cells.append(code("""from sklearn.metrics import classification_report, confusion_matrix, accuracy_score
 from pickle import dump, load
+print('Librerías listas.')
 """))
 
 cells.append(md("""<a id='cfg'></a>
@@ -152,15 +220,29 @@ cells.append(md("""<a id='cfg'></a>
 - **`MODO_CLASE_3H = False`:** réplica del flujo del repo (100 000 filas, 10 folds, 9 modelos) → mejor para **tarea en casa** o sesión extendida.
 """))
 
-cells.append(code("""# --- Ajuste docente ---
-MODO_CLASE_3H = True
+cells.append(step_md(
+    "Paso 2.2a", "Modo docente",
+    "Elige entre sesión de 3 h o réplica completa del repo.",
+    "`MODO_CLASE_3H = True` para clase; `False` para tarea.",
+    ml="Menos filas y folds = menos tiempo de cómputo en Colab.",
+))
 
-N_FILAS = 30_000 if MODO_CLASE_3H else 100_000
+cells.append(code("""MODO_CLASE_3H = True
+print('Modo:', 'CLASE 3h' if MODO_CLASE_3H else 'COMPLETO fin-ml')
+"""))
+
+cells.append(step_md(
+    "Paso 2.2b", "Tamaño de muestra y CV",
+    "Define cuántas filas finales y cuántos folds usar.",
+    "Imprime `N_FILAS` y `N_FOLDS`.",
+    trading="Modelar solo el tramo reciente enfatiza el régimen de mercado actual (con trade-offs).",
+    ml="Más folds = estimación más estable pero más lento.",
+))
+
+cells.append(code("""N_FILAS = 30_000 if MODO_CLASE_3H else 100_000
 N_FOLDS = 3 if MODO_CLASE_3H else 10
 CV_SEED = 7
-
-print('Modo:', 'CLASE 3h' if MODO_CLASE_3H else 'COMPLETO fin-ml')
-print('Filas para modelado:', N_FILAS, '| Folds CV:', N_FOLDS)
+print('Filas para modelado:', N_FILAS, '| Folds CV:', N_FOLDS, '| Seed:', CV_SEED)
 """))
 
 cells.append(md("""---
@@ -171,6 +253,12 @@ cells.append(md("""---
 > **Nota del libro:** en GitHub la muestra es pequeña por límite de tamaño; los números del PDF se reproducen con el CSV completo en Kaggle.
 """))
 
+cells.append(step_md(
+    "Paso A1", "Rutas de datos",
+    "Define archivos locales posibles (Colab, repo clonado, carpeta `data/`).",
+    "Lista `CANDIDATES` sin ejecutar lectura aún.",
+))
+
 cells.append(code("""from pathlib import Path
 
 CANDIDATES = [
@@ -178,12 +266,29 @@ CANDIDATES = [
     Path('Ejemplo_Clase/data/BitstampData_sample.csv'),
     Path('/content/ml_clasificacion/Ejemplo_Clase/data/BitstampData_sample.csv'),
 ]
-URLS = [
+print('Rutas locales configuradas:', len(CANDIDATES))
+"""))
+
+cells.append(step_md(
+    "Paso A2", "URLs de respaldo",
+    "Si no hay CSV local, intentará descargar desde GitHub.",
+    "Lista `URLS` (ml_clasificacion y fin-ml).",
+))
+
+cells.append(code("""URLS = [
     'https://raw.githubusercontent.com/owoc9103/ml_clasificacion/main/Ejemplo_Clase/data/BitstampData_sample.csv',
     'https://raw.githubusercontent.com/tatsath/fin-ml/master/Chapter%206%20-%20Sup.%20Learning%20-%20Classification%20models/CaseStudy3%20-%20Bitcoin%20Trading%20Strategy/BitstampData_sample.csv',
 ]
+"""))
 
-dataset = None
+cells.append(step_md(
+    "Paso A3", "Leer CSV",
+    "Carga el primer archivo local encontrado; si no, descarga.",
+    "Mensaje `Archivo local:` o `Descargado:` y número de filas.",
+    trading="Cada fila es un minuto de Bitstamp: base de la estrategia intradía.",
+))
+
+cells.append(code("""dataset = None
 for p in CANDIDATES:
     if p.exists():
         dataset = read_csv(p)
@@ -214,6 +319,12 @@ cells.append(md("""### Paso a paso — qué es cada columna (Bitcoin)
 Cada **fila = un minuto**. La estrategia del libro decide en cada minuto si el régimen es “alcista de corto plazo” (etiqueta) usando medias e indicadores **calculados solo con información hasta ese minuto** (cuidado con *look-ahead* en proyectos propios).
 """))
 
+cells.append(step_md(
+    "Paso A4", "Herramientas de visualización en notebook",
+    "Configura `display` y precisión de pandas.",
+    "`Librerías listas` implícito al ejecutar sin error.",
+))
+
 cells.append(code("""try:
     from IPython.display import display
 except ImportError:
@@ -222,27 +333,46 @@ set_option('display.width', 100)
 set_option('precision', 3)
 """))
 
-cells.append(md("""**Paso A3 — Tamaño del archivo:** filas × columnas. En la muestra GitHub hay menos filas que en Kaggle completo.
-"""))
+cells.append(step_md(
+    "Paso A5", "Dimensiones del dataset",
+    "Muestra filas × columnas.",
+    "Tupla `(filas, columnas)` — compara con Kaggle completo si haces tarea.",
+))
 
 cells.append(code("""print('Shape (filas, columnas):', dataset.shape)
 """))
 
-cells.append(md("""**Paso A4 — Últimas observaciones:** revisa que `Close` y volúmenes sean numéricos y que el orden temporal sea coherente (precios recientes al final).
-"""))
+cells.append(post_md(
+    "¿Cuántas filas tienes? En clase usaremos solo las últimas `N_FILAS` minutos.",
+    ml="Menos filas = entrenamiento más rápido pero menos historia.",
+))
+
+cells.append(step_md(
+    "Paso A6", "Cola de la serie",
+    "Muestra los últimos 5 minutos cargados.",
+    "Precios y volúmenes recientes; orden temporal (más nuevo abajo).",
+    trading="Verifica que `Close` tenga sentido (no ceros ni saltos absurdos).",
+))
 
 cells.append(code("""display(dataset.tail(5))
 """))
 
-cells.append(md("""**Paso A5 — Resumen estadístico:** fíjate en `count` (¿faltan valores?) y en min/max de `Close` (rango de precios en la muestra).
-"""))
+cells.append(step_md(
+    "Paso A7", "Estadísticas descriptivas",
+    "Resumen numérico por columna (`describe`).",
+    "Columna `count`: si es menor que filas, hay NaNs.",
+    trading="Rango de `Close` te sitúa en qué época/precio está la muestra.",
+))
 
 cells.append(code("""display(dataset.describe())
 """))
 
-cells.append(md("""**Interpretación (5 min):** ¿Cuántos NaNs implícitos (`count` < filas)? ¿Rango de `Close`? En minutos hay millones de filas; modelaremos solo las **últimas `N_FILAS`** (ver config).
+cells.append(post_md(
+    "Compara `count` con el número de filas. Anota min/max de `Close`.",
+    ml="NaNs o outliers extremos pueden distorsionar indicadores y modelos.",
+))
 
-> **Actividad A1 (3 min):** en chat, respondan: *¿Por qué no entrenar con toda la serie desde 2012 en un laptop/Colab free?* (memoria, tiempo, régimen de mercado distinto).
+cells.append(md("""> **Actividad A1 (3 min):** *¿Por qué no entrenar con toda la serie desde 2012 en Colab free?* (memoria, tiempo, cambio de régimen).
 """))
 
 cells.append(md("""---
@@ -253,17 +383,37 @@ cells.append(md("""---
 ## 4.1 Limpieza de datos
 """))
 
-cells.append(code("""# Checking for any null values
-print('Null Values =', dataset.isnull().values.any())
+cells.append(step_md(
+    "Paso B1.1", "Detectar valores faltantes",
+    "Pregunta si existe algún NaN en la tabla.",
+    "`Null Values = False` es lo ideal antes de indicadores.",
+    trading="Huecos en precios generan señales falsas si no se tratan.",
+))
+
+cells.append(code("""print('¿Hay NaNs?', dataset.isnull().values.any())
+print('NaNs por columna:\\n', dataset.isnull().sum())
 """))
 
-cells.append(md("""Si hay nulos, el libro propone **forward fill** (último valor observado): coherente en series de precios, pero introduce suavizado en huecos largos.
-"""))
+cells.append(step_md(
+    "Paso B1.2", "Forward fill",
+    "Rellena NaNs con el último valor observado (fin-ml).",
+    "Repite el chequeo mental: menos NaNs tras ejecutar.",
+    trading="Asume que el último precio sigue vigente en el hueco — razonable en minutos, dudoso en días.",
+))
 
 cells.append(code("""dataset[dataset.columns.values] = dataset[dataset.columns.values].ffill()
+print('¿NaNs tras ffill?', dataset.isnull().values.any())
 """))
 
+cells.append(step_md(
+    "Paso B1.3", "Quitar marca de tiempo",
+    "Elimina `Timestamp`; el orden de filas ya indexa el tiempo.",
+    "Columna `Timestamp` ya no está en `dataset.columns`.",
+    ml="El modelo no usa la fecha cruda; solo features numéricas.",
+))
+
 cells.append(code("""dataset = dataset.drop(columns=['Timestamp'])
+print('Columnas:', list(dataset.columns))
 """))
 
 cells.append(md("""<a id='3.2'></a>
@@ -287,34 +437,55 @@ $$\\text{signal}_t = \\mathbb{1}\\{\\text{SMA}_{10}(P)_t > \\text{SMA}_{60}(P)_t
 Las SMA usadas para etiquetar se **eliminan** de $X$ antes de entrenar para evitar copiar la regla trivialmente.
 """))
 
-cells.append(md("""**Paso B3.1 — SMA corta (10 min):** media móvil simple del cierre; reacciona rápido a subidas/bajadas recientes.
-"""))
+cells.append(step_md(
+    "Paso B3.1", "SMA corta (10 min)",
+    "Calcula media móvil simple de `Close` con ventana 10.",
+    "`short_mavg` cerca de `Close` pero más suave.",
+    trading="Captura tendencia muy reciente (≈10 minutos).",
+))
 
 cells.append(code("""dataset['short_mavg'] = dataset['Close'].rolling(window=10, min_periods=1, center=False).mean()
 dataset[['Close', 'short_mavg']].tail(3)
 """))
 
-cells.append(md("""**Paso B3.2 — SMA larga (60 min):** filtra ruido; representa el “consenso” de precio en la última hora.
-"""))
+cells.append(step_md(
+    "Paso B3.2", "SMA larga (60 min)",
+    "Media móvil de 60 minutos sobre `Close`.",
+    "`long_mavg` cambia más lento que `short_mavg`.",
+    trading="Proxy de tendencia de la última hora.",
+))
 
 cells.append(code("""dataset['long_mavg'] = dataset['Close'].rolling(window=60, min_periods=1, center=False).mean()
 dataset[['Close', 'short_mavg', 'long_mavg']].tail(3)
 """))
 
-cells.append(md("""**Paso B3.3 — Etiqueta binaria:** si la media corta está **por encima** de la larga, marcamos régimen alcista de corto plazo (`signal = 1`).
-"""))
+cells.append(step_md(
+    "Paso B3.3", "Crear etiqueta `signal`",
+    "1 si SMA corta > SMA larga; 0 en caso contrario.",
+    "Nueva columna `signal` con valores 0.0 y 1.0.",
+    trading="1 ≈ régimen alcista de corto plazo (estar largo en la demo).",
+    ml="Esta columna será nuestra variable objetivo $Y$.",
+))
 
 cells.append(code("""dataset['signal'] = np.where(dataset['short_mavg'] > dataset['long_mavg'], 1.0, 0.0)
+dataset[['Close', 'short_mavg', 'long_mavg', 'signal']].tail(5)
 """))
 
-cells.append(code("""dataset.tail()
-"""))
-
-cells.append(md("""**Interpretación:** si `signal` está muy desbalanceado (p. ej. 90 % unos), accuracy puede engañar: el modelo podría predecir siempre la clase mayoritaria. Anota las proporciones antes de entrenar.
-"""))
+cells.append(step_md(
+    "Paso B3.4", "Balance de clases",
+    "Cuenta proporción de 0 y 1 en `signal`.",
+    "Porcentajes en `value_counts(normalize=True)`.",
+    ml="Clase muy mayoritaria infla accuracy de un modelo trivial.",
+    trading="Muchos 1 → mercado alcista en la ventana; pocos 1 → lateral/bajista.",
+))
 
 cells.append(code("""dataset['signal'].value_counts(normalize=True)
 """))
+
+cells.append(post_md(
+    "Si ~90% es clase 1, un modelo que siempre predice 1 ya tiene ~90% accuracy.",
+    trading="Por eso en long-only importan precision y falsos positivos.",
+))
 
 cells.append(md("""> **Actividad B1 (5 min):** si la clase 1 tiene > 55 %, ¿qué accuracy obtiene un modelo que *siempre* predice 1? (Respuesta: ~proporción de unos.) Por eso miramos precision/recall en trading.
 
@@ -333,50 +504,91 @@ cells.append(md("""<a id='3.4'></a>
 | **Estocástico** | %K, %D | Posición del cierre dentro del rango High–Low reciente |
 | **Liquidez / nivel** | `Close`, `Volume_(BTC)`, `Weighted_Price` | Contexto de precio y actividad |
 
-A continuación: **una familia de indicadores por celda** (mismas fórmulas que fin-ml). Ejecuta en orden y lee la interpretación antes de seguir.
+A continuación: **un cálculo por celda** (mismas fórmulas que fin-ml). Lee **Qué hace / Qué mirar** antes de ejecutar.
 """))
 
-cells.append(md("""**Paso B4.1 — EMA (tendencia):** media exponencial del cierre; da más peso a precios recientes que la SMA.
-"""))
+# --- Indicadores técnicos (generados celda a celda) ---
+cells.append(step_md(
+    "Paso B4.0a", "Definir función EMA",
+    "Crea la función auxiliar `EMA(df, n)` (fin-ml).",
+    "Solo define la función; aún no modifica `dataset`.",
+    trading="EMA pondera más los cierres recientes que una SMA.",
+))
 
 cells.append(code("""def EMA(df, n):
     EMA = pd.Series(df['Close'].ewm(span=n, min_periods=n).mean(), name='EMA_' + str(n))
     return EMA
-
-dataset['EMA10'] = EMA(dataset, 10)
-dataset['EMA30'] = EMA(dataset, 30)
-dataset['EMA200'] = EMA(dataset, 200)
-dataset[['Close', 'EMA10', 'EMA30']].tail(2)
 """))
 
-cells.append(md("""**Paso B4.2 — ROC (momentum %):** cambio porcentual del precio respecto a hace *n* minutos.
+for n, tip in [
+    (10, "Tendencia muy corta (~10 min)."),
+    (30, "Tendencia intermedia (~30 min)."),
+    (200, "Tendencia lenta (~200 min en datos de 1 min)."),
+]:
+    cells.append(step_md(
+        f"Paso B4.1.{n}", f"Columna EMA{n}",
+        f"Calcula y guarda `EMA{n}` en el dataset.",
+        f"Último valor de EMA{n} impreso.",
+        trading=tip,
+        ml="Entra luego en la matriz $X$.",
+    ))
+    cells.append(code(f"""dataset['EMA{n}'] = EMA(dataset, {n})
+print('EMA{n} (último):', round(float(dataset['EMA{n}'].iloc[-1]), 2))
 """))
+
+cells.append(step_md(
+    "Paso B4.2a", "Definir función ROC",
+    "Rate of change en porcentaje respecto a hace n minutos.",
+    "Función `ROC` definida.",
+    trading="ROC > 0 → precio subió vs hace n minutos.",
+))
 
 cells.append(code("""def ROC(df, n):
     M = df.diff(n - 1)
     N = df.shift(n - 1)
     ROC = pd.Series(((M / N) * 100), name='ROC_' + str(n))
     return ROC
-
-dataset['ROC10'] = ROC(dataset['Close'], 10)
-dataset['ROC30'] = ROC(dataset['Close'], 30)
-dataset[['Close', 'ROC10', 'ROC30']].tail(2)
 """))
 
-cells.append(md("""**Paso B4.3 — MOM (momentum absoluto):** diferencia de precio en *n* minutos (no en %).
+for n in (10, 30):
+    cells.append(step_md(
+        f"Paso B4.2.{n}", f"Columna ROC{n}",
+        f"Aplica ROC al cierre con ventana {n}.",
+        f"Valor reciente de ROC{n}.",
+        trading="Magnitud del movimiento reciente en %.",
+    ))
+    cells.append(code(f"""dataset['ROC{n}'] = ROC(dataset['Close'], {n})
+print('ROC{n} (último):', round(float(dataset['ROC{n}'].iloc[-1]), 3))
 """))
+
+cells.append(step_md(
+    "Paso B4.3a", "Definir función MOM",
+    "Momentum = diferencia de precio en n minutos.",
+    "Función `MOM` definida.",
+    trading="Similar a ROC pero en unidades de precio, no %.",
+))
 
 cells.append(code("""def MOM(df, n):
     MOM = pd.Series(df.diff(n), name='Momentum_' + str(n))
     return MOM
-
-dataset['MOM10'] = MOM(dataset['Close'], 10)
-dataset['MOM30'] = MOM(dataset['Close'], 30)
-dataset[['Close', 'MOM10']].tail(2)
 """))
 
-cells.append(md("""**Paso B4.4 — RSI:** mide fuerza relativa de subidas vs bajadas (0–100). Valores altos → muchas subidas recientes (posible sobrecompra en análisis clásico).
+for n in (10, 30):
+    cells.append(step_md(
+        f"Paso B4.3.{n}", f"Columna MOM{n}",
+        f"Diferencia de Close vs hace {n} minutos.",
+        f"Último MOM{n}.",
+    ))
+    cells.append(code(f"""dataset['MOM{n}'] = MOM(dataset['Close'], {n})
+print('MOM{n} (último):', round(float(dataset['MOM{n}'].iloc[-1]), 2))
 """))
+
+cells.append(step_md(
+    "Paso B4.4a", "Definir función RSI",
+    "Implementación RSI del repo (0–100).",
+    "Función `RSI` definida.",
+    trading="RSI alto → dominan subidas recientes; bajo → dominan caídas.",
+))
 
 cells.append(code("""def RSI(series, period):
     delta = series.diff().dropna()
@@ -392,14 +604,22 @@ cells.append(code("""def RSI(series, period):
     return 100 - 100 / (1 + rs)
 """))
 
-cells.append(code("""dataset['RSI10'] = RSI(dataset['Close'], 10)
-dataset['RSI30'] = RSI(dataset['Close'], 30)
-dataset['RSI200'] = RSI(dataset['Close'], 200)
-dataset[['Close', 'RSI10', 'RSI30']].tail(2)
+for n in (10, 30, 200):
+    cells.append(step_md(
+        f"Paso B4.4.{n}", f"Columna RSI{n}",
+        f"RSI del cierre con periodo {n}.",
+        f"RSI{n} entre 0 y 100 (último valor).",
+    ))
+    cells.append(code(f"""dataset['RSI{n}'] = RSI(dataset['Close'], {n})
+print('RSI{n} (último):', round(float(dataset['RSI{n}'].iloc[-1]), 2))
 """))
 
-cells.append(md("""**Paso B4.5 — Estocástico (%K, %D):** dónde cierra el precio dentro del rango High–Low de los últimos *n* minutos (0–100).
-"""))
+cells.append(step_md(
+    "Paso B4.5a", "Funciones estocástico %K y %D",
+    "Posición del cierre en el rango High–Low reciente.",
+    "Funciones `STOK` y `STOD` definidas.",
+    trading="%K reacciona rápido; %D es media móvil de %K (más suave).",
+))
 
 cells.append(code("""def STOK(close, low, high, n):
     STOK = ((close - low.rolling(n).min()) / (high.rolling(n).max() - low.rolling(n).min())) * 100
@@ -411,31 +631,59 @@ def STOD(close, low, high, n):
     return STOD
 """))
 
-cells.append(code("""dataset['%K10'] = STOK(dataset['Close'], dataset['Low'], dataset['High'], 10)
-dataset['%D10'] = STOD(dataset['Close'], dataset['Low'], dataset['High'], 10)
-dataset['%K30'] = STOK(dataset['Close'], dataset['Low'], dataset['High'], 30)
-dataset['%D30'] = STOD(dataset['Close'], dataset['Low'], dataset['High'], 30)
-dataset['%K200'] = STOK(dataset['Close'], dataset['Low'], dataset['High'], 200)
-dataset['%D200'] = STOD(dataset['Close'], dataset['Low'], dataset['High'], 200)
-dataset[['Close', '%K10', '%D10']].tail(2)
+for n in (10, 30, 200):
+    cells.append(step_md(
+        f"Paso B4.5.{n}K", f"%K{n}",
+        f"Estocástico %K con ventana {n}.",
+        f"Último %K{n} (0–100).",
+    ))
+    cells.append(code(f"""dataset['%K{n}'] = STOK(dataset['Close'], dataset['Low'], dataset['High'], {n})
+print('%K{n} (último):', round(float(dataset['%K{n}'].iloc[-1]), 2))
+"""))
+    cells.append(step_md(
+        f"Paso B4.5.{n}D", f"%D{n}",
+        f"Suavizado %D (media de %K, ventana 3).",
+        f"Último %D{n}.",
+    ))
+    cells.append(code(f"""dataset['%D{n}'] = STOD(dataset['Close'], dataset['Low'], dataset['High'], {n})
+print('%D{n} (último):', round(float(dataset['%D{n}'].iloc[-1]), 2))
 """))
 
-cells.append(md("""**Paso B4.6 — MA (medias simples):** en el repo los nombres son MA21/63/252 pero las ventanas son 10/30/200 minutos (igual que fin-ml).
-"""))
+cells.append(step_md(
+    "Paso B4.6a", "Definir función MA",
+    "Media móvil simple con `min_periods=n` (fin-ml).",
+    "Función `MA` definida.",
+))
 
 cells.append(code("""def MA(df, n):
     MA = pd.Series(df['Close'].rolling(n, min_periods=n).mean(), name='MA_' + str(n))
     return MA
-
-dataset['MA21'] = MA(dataset, 10)
-dataset['MA63'] = MA(dataset, 30)
-dataset['MA252'] = MA(dataset, 200)
 """))
 
-cells.append(md("""**Paso B4.7 — Vista final:** tabla con precio, etiqueta e indicadores recientes.
+for win, col, tip in [
+    (10, "MA21", "Nombre MA21 en repo; ventana 10 min."),
+    (30, "MA63", "Nombre MA63; ventana 30 min."),
+    (200, "MA252", "Nombre MA252; ventana 200 min."),
+]:
+    cells.append(step_md(
+        f"Paso B4.6.{col}", f"Columna {col}",
+        f"MA simple con ventana {win} minutos.",
+        f"Último valor de {col}.",
+        trading=tip,
+    ))
+    cells.append(code(f"""dataset['{col}'] = MA(dataset, {win})
+print('{col} (último):', round(float(dataset['{col}'].iloc[-1]), 2))
 """))
 
-cells.append(code("""dataset.tail()
+cells.append(step_md(
+    "Paso B4.7", "Revisión del dataset enriquecido",
+    "Muestra las últimas filas con precio, señal e indicadores.",
+    "Muchas columnas; verifica que no haya NaN al final.",
+    ml="Tras `dropna` perderemos filas iniciales con ventanas incompletas.",
+))
+
+cells.append(code("""print('Número de columnas:', len(dataset.columns))
+dataset.tail(3)
 """))
 
 cells.append(md("""<a id='3.5'></a>
@@ -444,34 +692,55 @@ cells.append(md("""<a id='3.5'></a>
 Exploramos relaciones lineales entre indicadores (como en el caso Bitcoin del repo).
 """))
 
-cells.append(md("""**Paso B5.1 — Quitar columnas crudas:** OHLC y las SMA de etiquetado ya no entran a $X$; evitamos duplicar información y “copiar” la regla SMA.
-"""))
+cells.append(step_md(
+    "Paso B5.1", "Eliminar columnas no predictivas",
+    "Quita OHLC crudo, volumen fiat y SMA de etiquetado.",
+    "Lista de columnas restantes (incluye `signal`).",
+    ml="Evita que el modelo copie trivialmente la regla SMA vía `short_mavg`.",
+    trading="Mantenemos `Close`, volumen BTC y features derivados.",
+))
 
 cells.append(code("""dataset = dataset.drop(['High', 'Low', 'Open', 'Volume_(Currency)', 'short_mavg', 'long_mavg'], axis=1)
 print('Columnas tras drop:', list(dataset.columns))
 """))
 
-cells.append(md("""**Paso B5.2 — Filas incompletas:** los indicadores con ventana larga generan NaN al inicio; las eliminamos (como fin-ml).
-"""))
+cells.append(step_md(
+    "Paso B5.2", "Eliminar filas con NaN",
+    "Borra filas donde algún indicador aún no está definido.",
+    "Cuántas filas se eliminaron vs antes.",
+    ml="Primeras filas tras ventanas largas (p. ej. 200 min) suelen ser NaN.",
+))
 
 cells.append(code("""filas_antes = len(dataset)
 dataset = dataset.dropna(axis=0)
 print('Filas eliminadas por NaN:', filas_antes - len(dataset))
-dataset.tail(3)
+print('Filas listas para modelado:', len(dataset))
 """))
 
-cells.append(md("""**Paso B5.3 — Correlación entre features:** detecta redundancia (varias medias del mismo precio suelen correlacionar fuerte).
-"""))
+cells.append(step_md(
+    "Paso B5.3a", "Matriz de correlación (números)",
+    "Calcula correlación lineal entre todas las columnas numéricas.",
+    "Objeto `correlation` (usa la celda siguiente para graficar).",
+    ml="Correlaciones |r|>0.9 sugieren redundancia entre features.",
+))
 
 cells.append(code("""correlation = dataset.corr()
-figsize = (10, 10) if MODO_CLASE_3H else (15, 15)
+print('Tamaño matriz:', correlation.shape)
+"""))
+
+cells.append(step_md(
+    "Paso B5.3b", "Heatmap de correlación",
+    "Visualiza la matriz (como el caso Bitcoin del repo).",
+    "Bloques rojos/azules = variables que se mueven juntas.",
+    trading="EMA/MA/EMA200 a menudo correlacionan fuerte con Close.",
+    ml="LDA/LR sufren con colinealidad; RF/GBM la toleran mejor.",
+))
+
+cells.append(code("""figsize = (10, 10) if MODO_CLASE_3H else (15, 15)
 plt.figure(figsize=figsize)
 plt.title('Matriz de correlación')
 sns.heatmap(correlation, vmax=1, square=True, annot=False, cmap='cubehelix')
 plt.show()
-"""))
-
-cells.append(md("""**Interpretación:** pares con correlación > 0.9 (p. ej. distintas medias del mismo precio) aportan poca información nueva; en proyectos reales considerarías eliminar redundantes para estabilizar modelos lineales. Los árboles y bosques toleran colinealidad mejor que LDA o regresión logística.
 """))
 
 cells.append(md("""<a id='3.6'></a>
@@ -514,48 +783,96 @@ Precio minuto a minuto → indicadores X_t → modelo → ŷ_t (0/1)
 Misma lógica que fin-ml: `random_state=1`.
 """))
 
-cells.append(md("""**Paso C1.1 — Ventana reciente:** nos quedamos con las últimas `N_FILAS` filas (config al inicio).
-"""))
+cells.append(step_md(
+    "Paso C1.1", "Recortar ventana temporal",
+    "Toma las últimas `N_FILAS` filas del dataset limpio.",
+    "Valor de `n_use` impreso.",
+    trading="Enfoca el modelo en el tramo más reciente de la muestra.",
+))
 
 cells.append(code("""n_use = min(N_FILAS, len(dataset))
 subset_dataset = dataset.iloc[-n_use:]
 print('Filas para modelado:', n_use)
-subset_dataset[['Close', 'signal']].head(2)
 """))
 
-cells.append(md("""**Paso C1.2 — Separar $Y$ y $X$:** objetivo = `signal`; predictores = resto de columnas numéricas.
-"""))
+cells.append(step_md(
+    "Paso C1.2", "Variable objetivo Y",
+    "Extrae la columna `signal` como etiqueta.",
+    "Tamaño de `Y` y media (proporción de unos).",
+    ml="$Y \\in \\{0,1\\}$ — clasificación binaria.",
+))
 
 cells.append(code("""Y = subset_dataset['signal']
-X = subset_dataset.loc[:, subset_dataset.columns != 'signal']
-print('Y (etiqueta):', Y.shape, '| X (features):', X.shape)
+print('Y shape:', Y.shape, '| P(Y=1):', round(float(Y.mean()), 3))
 """))
 
-cells.append(md("""**Paso C1.3 — Partición 80/20:** entrenamiento para ajustar; validación como “futuro” hold-out (`random_state=1` como fin-ml).
+cells.append(step_md(
+    "Paso C1.3", "Matriz de features X",
+    "Todas las columnas excepto `signal`.",
+    "Número de features y filas en `X`.",
+    ml="Cada fila es un minuto; cada columna un indicador o precio/volumen.",
+))
+
+cells.append(code("""X = subset_dataset.loc[:, subset_dataset.columns != 'signal']
+print('X shape:', X.shape)
+print('Features:', list(X.columns))
 """))
+
+cells.append(step_md(
+    "Paso C1.4", "Partición train / validation",
+    "80% train, 20% validation (`random_state=1`, fin-ml).",
+    "Shapes de train y validation.",
+    ml="Validation simula datos no usados al ajustar hiperparámetros finales.",
+))
 
 cells.append(code("""validation_size = 0.2
-seed = 1
 X_train, X_validation, Y_train, Y_validation = train_test_split(
     X, Y, test_size=validation_size, random_state=1
 )
 print('Train:', X_train.shape, 'Validation:', X_validation.shape)
-print('Proporción Y en train:', Y_train.mean())
 """))
 
-cells.append(md("""**Interpretación:** usar solo el tramo final simula “entrenar con historia reciente”. No es walk-forward estricto (el split es aleatorio estratificado), pero coincide con el código del repositorio para comparar resultados en clase.
-"""))
+cells.append(post_md(
+    "Comprueba que la proporción de Y=1 sea similar en train y validation.",
+    ml="No es split temporal estricto; es el mismo esquema que fin-ml para comparar.",
+))
 
 cells.append(md("""<a id='4.2'></a>
 ## 5.2 Opciones de prueba y métricas de evaluación
 """))
 
+cells.append(step_md(
+    "Paso C2.1", "Número de folds",
+    "Copia `N_FOLDS` de la configuración de sesión.",
+    "`num_folds` (3 en clase, 10 en modo completo).",
+))
+
 cells.append(code("""num_folds = N_FOLDS
-seed = CV_SEED
-scoring = 'accuracy'
-# En clase: descomenta UNA métrica y comenta accuracy para discutir trading long-only
+print('Folds CV:', num_folds)
+"""))
+
+cells.append(step_md(
+    "Paso C2.2", "Semilla de CV",
+    "Fija aleatoriedad del KFold para resultados reproducibles.",
+    "`seed` = CV_SEED.",
+))
+
+cells.append(code("""seed = CV_SEED
+print('Seed CV:', seed)
+"""))
+
+cells.append(step_md(
+    "Paso C2.3", "Métrica de scoring",
+    "Define qué optimiza CV y Grid Search.",
+    "Variable `scoring` (por defecto `accuracy`).",
+    trading="Prueba `'precision'` o `'recall'` en Actividad C1 (long-only).",
+))
+
+cells.append(code("""scoring = 'accuracy'
+# En clase: descomenta UNA línea y comenta accuracy
 # scoring = 'precision'
 # scoring = 'recall'
+print('Scoring activo:', scoring)
 """))
 
 cells.append(md("""**Métricas (libro, cap. 6):**
@@ -607,6 +924,13 @@ En **modo completo** (`MODO_CLASE_3H = False`) se añaden KNN, NB, NN, AdaBoost 
 cells.append(md("""> **Pausa docente (2 min):** enseñar un gráfico train vs CV antes de seguir al benchmark.
 """))
 
+cells.append(step_md(
+    "Paso C3.0", "Submuestra 2D para gráficos",
+    "Solo RSI10 y ROC10 + signal (visualización de hiperparámetros).",
+    "Tamaño de `Xd_tr`.",
+    ml="Reducir a 2 features permite interpretar curvas de validación.",
+))
+
 cells.append(code("""from sklearn.pipeline import Pipeline
 
 demo_cols = ['RSI10', 'ROC10']
@@ -617,8 +941,12 @@ Xd_tr, _, yd_tr, _ = train_test_split(Xd, yd, test_size=0.3, random_state=1, str
 print('Demo 2D — filas train:', len(Xd_tr))
 """))
 
-cells.append(md("""**Paso C3.1 — Árbol (CART):** curva train vs CV al variar `max_depth` (solo RSI10 y ROC10 para poder visualizar).
-"""))
+cells.append(step_md(
+    "Paso C3.1", "Curva de validación — árbol (max_depth)",
+    "Entrena árboles con distintas profundidades; compara train vs CV.",
+    "Gráfico: si train sube y CV baja → sobreajuste.",
+    trading="Profundidad alta = reglas muy específicas al ruido del minuto.",
+))
 
 cells.append(code("""depths = [2, 4, 6, 8, 10, 15] if MODO_CLASE_3H else [2, 3, 4, 5, 6, 8, 10, 15, 20]
 pipe = Pipeline([('sc', StandardScaler()), ('clf', DecisionTreeClassifier(random_state=1))])
@@ -630,8 +958,12 @@ plt.xlabel('max_depth'); plt.ylabel('Accuracy'); plt.title('Árbol: profundidad 
 plt.legend(); plt.show()
 """))
 
-cells.append(md("""**Paso C3.2 — Regresión logística:** mismo ejercicio con el hiperparámetro `C` (inverso de la regularización).
-"""))
+cells.append(step_md(
+    "Paso C3.2", "Curva de validación — logística (C)",
+    "Varía regularización `C` en escala logarítmica.",
+    "Gráfico semilogx: busca C donde CV sea alta y train no dispare.",
+    ml="C grande → modelo más flexible; C pequeño → más regularización.",
+))
 
 cells.append(code("""Cs = np.logspace(-3, 2, 8)
 pipe_lr = Pipeline([('sc', StandardScaler()), ('clf', LogisticRegression(max_iter=3000, random_state=1))])
@@ -659,42 +991,107 @@ cells.append(md("""<a id='4.4'></a>
 - **Modo completo:** 9 modelos (fin-ml).
 """))
 
-cells.append(code("""models = []
-if MODO_CLASE_3H:
-    models.append(('LR', LogisticRegression(max_iter=3000)))
-    models.append(('LDA', LinearDiscriminantAnalysis()))
-    models.append(('CART', DecisionTreeClassifier(max_depth=12, random_state=1)))
-    models.append(('GBM', GradientBoostingClassifier(n_estimators=50, random_state=1)))
-    models.append(('RF', RandomForestClassifier(n_estimators=50, n_jobs=-1, random_state=1)))
-else:
-    models.append(('LR', LogisticRegression(max_iter=3000)))
-    models.append(('LDA', LinearDiscriminantAnalysis()))
-    models.append(('KNN', KNeighborsClassifier()))
-    models.append(('CART', DecisionTreeClassifier()))
-    models.append(('NB', GaussianNB()))
-    models.append(('NN', MLPClassifier(max_iter=400)))
-    models.append(('AB', AdaBoostClassifier()))
-    models.append(('GBM', GradientBoostingClassifier()))
-    models.append(('RF', RandomForestClassifier(n_jobs=-1)))
-print('Modelos a evaluar:', [m[0] for m in models])
-"""))
-
-cells.append(md("""**Paso C4.2 — Validación cruzada en train:** cada modelo se entrena y evalúa `N_FOLDS` veces; imprimimos media y desviación.
-"""))
+cells.append(step_md(
+    "Paso C4.1", "Inicializar benchmark CV",
+    "Crea listas vacías y un KFold compartido para todos los modelos.",
+    "Mensaje con número de folds.",
+))
 
 cells.append(code("""results = []
 names = []
-for name, model in models:
-    kfold = KFold(n_splits=num_folds, shuffle=True, random_state=seed)
-    cv_results = cross_val_score(model, X_train, Y_train, cv=kfold, scoring=scoring)
-    results.append(cv_results)
-    names.append(name)
-    msg = '%s: %f (%f)' % (name, cv_results.mean(), cv_results.std())
-    print(msg)
+kfold = KFold(n_splits=num_folds, shuffle=True, random_state=seed)
+print('Benchmark CV — folds:', num_folds, '| scoring:', scoring)
 """))
 
-cells.append(md("""**Paso C4.3 — Boxplot:** cada caja muestra la dispersión de accuracy entre folds (estabilidad del modelo).
+MODELS_3H = [
+    ("LR", "LogisticRegression(max_iter=3000)", "Frontera lineal; baseline.", "P(compra) ~ w·indicadores."),
+    ("LDA", "LinearDiscriminantAnalysis()", "Frontera lineal LDA.", "Baseline rápido en alta dimensión."),
+    ("CART", "DecisionTreeClassifier(max_depth=12, random_state=1)", "Árbol prof. limitada 12.", "Reglas locales minuto a minuto."),
+    ("GBM", "GradientBoostingClassifier(n_estimators=50, random_state=1)", "50 árboles débiles secuenciales.", "Corrige errores de modelos previos."),
+    ("RF", "RandomForestClassifier(n_estimators=50, n_jobs=-1, random_state=1)", "50 árboles en paralelo.", "Robusto al ruido; suele ganar el benchmark."),
+]
+
+cells.append(step_md(
+    "Paso C4.2", "Lista de modelos (modo sesión)",
+    "Muestra qué algoritmos se evaluarán según `MODO_CLASE_3H`.",
+    "Lista impresa de códigos LR, LDA, …",
+))
+
+cells.append(code("""if MODO_CLASE_3H:
+    bench_list = [
+        ('LR', LogisticRegression(max_iter=3000)),
+        ('LDA', LinearDiscriminantAnalysis()),
+        ('CART', DecisionTreeClassifier(max_depth=12, random_state=1)),
+        ('GBM', GradientBoostingClassifier(n_estimators=50, random_state=1)),
+        ('RF', RandomForestClassifier(n_estimators=50, n_jobs=-1, random_state=1)),
+    ]
+else:
+    bench_list = [
+        ('LR', LogisticRegression(max_iter=3000)),
+        ('LDA', LinearDiscriminantAnalysis()),
+        ('KNN', KNeighborsClassifier()),
+        ('CART', DecisionTreeClassifier()),
+        ('NB', GaussianNB()),
+        ('NN', MLPClassifier(max_iter=400)),
+        ('AB', AdaBoostClassifier()),
+        ('GBM', GradientBoostingClassifier()),
+        ('RF', RandomForestClassifier(n_jobs=-1)),
+    ]
+print('Modelos:', [b[0] for b in bench_list])
 """))
+
+for tag, _expr, ml_tip, tr_tip in MODELS_3H:
+    cells.append(step_md(
+        f"Paso C4.3-{tag}", f"CV — {tag}",
+        f"Un fold a la vez: entrena **{tag}** en k−1 particiones y mide la métrica `scoring` en la restante.",
+        f"Línea `{tag}: media (std)` — anota la media.",
+        trading=tr_tip,
+        ml=ml_tip,
+    ))
+    cells.append(code(f"""_found = False
+for _code, _model in bench_list:
+    if _code == '{tag}':
+        cv_results = cross_val_score(_model, X_train, Y_train, cv=kfold, scoring=scoring)
+        results.append(cv_results)
+        names.append('{tag}')
+        print('{tag}: %f (%f)' % (cv_results.mean(), cv_results.std()))
+        _found = True
+        break
+if not _found:
+    print('{tag}: no incluido en bench_list (omitido).')
+"""))
+
+for tag, ml_tip, tr_tip in [
+    ("KNN", "Clasificador por distancia en el espacio de features.", "Vecinos cercanos en RSI/EMA/etc."),
+    ("NB", "Generativo con supuesto de independencia.", "Baseline probabilístico rápido."),
+    ("NN", "MLP con capas ocultas.", "Captura no linealidades."),
+    ("AB", "AdaBoost sobre clasificadores débiles.", "Secuencia de modelos correctoras."),
+]:
+    cells.append(step_md(
+        f"Paso C4.3-{tag}", f"CV — {tag} (solo modo completo)",
+        f"Evalúa **{tag}** cuando `MODO_CLASE_3H = False`.",
+        "Si estás en modo 3 h, verás mensaje de omitido.",
+        ml=ml_tip,
+        trading=tr_tip,
+    ))
+    cells.append(code(f"""if MODO_CLASE_3H:
+    print('{tag}: omitido en MODO_CLASE_3H')
+else:
+    for _code, _model in bench_list:
+        if _code == '{tag}':
+            cv_results = cross_val_score(_model, X_train, Y_train, cv=kfold, scoring=scoring)
+            results.append(cv_results)
+            names.append('{tag}')
+            print('{tag}: %f (%f)' % (cv_results.mean(), cv_results.std()))
+            break
+"""))
+
+cells.append(step_md(
+    "Paso C4.4", "Boxplot del benchmark",
+    "Compara distribución de scores CV entre algoritmos.",
+    "Cajas estrechas = desempeño estable entre folds.",
+    ml="Elige el ganador (suele ser RF/GBM) para el Grid Search.",
+))
 
 cells.append(code("""fig = plt.figure()
 fig.suptitle('Comparación de algoritmos')
@@ -731,32 +1128,60 @@ cells.append(md("""---
 - **`criterion`:** forma de medir “pureza” de cada split (Gini vs entropía); impacto suele ser menor que la profundidad.
 """))
 
-cells.append(md("""**Paso D1 — Estandarizar solo para el grid:** `StandardScaler` sobre **X_train** (fin-ml hace lo mismo en esta etapa).
-"""))
+cells.append(step_md(
+    "Paso D1", "Ajustar StandardScaler",
+    "Calcula media/desvío de cada feature en train y transforma X_train.",
+    "Media ~0 en la primera feature tras escalar.",
+    ml="Solo para Grid Search RF en fin-ml; modelo final no usa escala.",
+))
 
 cells.append(code("""scaler = StandardScaler().fit(X_train)
 rescaledX = scaler.transform(X_train)
 print('Media tras escalar (1ª feature, muestra):', rescaledX[:, 0].mean().round(4))
 """))
 
-cells.append(md("""**Paso D2 — Definir la malla** de hiperparámetros del Random Forest.
-"""))
+cells.append(step_md(
+    "Paso D2a", "Hiperparámetro n_estimators",
+    "Lista de candidatos de número de árboles (según modo clase).",
+    "Vector `n_estimators` impreso.",
+    trading="Más árboles → señal más estable, más tiempo de cómputo.",
+))
 
 cells.append(code("""if MODO_CLASE_3H:
     n_estimators = [20, 50]
-    max_depth = [5, 10]
-    criterion = ['gini']
 else:
     n_estimators = [20, 80]
-    max_depth = [5, 10]
-    criterion = ['gini', 'entropy']
+print('n_estimators:', n_estimators)
+"""))
 
-param_grid = dict(n_estimators=n_estimators, max_depth=max_depth, criterion=criterion)
+cells.append(step_md(
+    "Paso D2b", "Hiperparámetros max_depth y criterion",
+    "Profundidad máxima de cada árbol y criterio de impureza (Gini/entropía).",
+    "Listas `max_depth` y `criterion`.",
+    ml="max_depth bajo → menos sobreajuste al ruido minuto a minuto.",
+))
+
+cells.append(code("""max_depth = [5, 10]
+criterion = ['gini'] if MODO_CLASE_3H else ['gini', 'entropy']
+print('max_depth:', max_depth, '| criterion:', criterion)
+"""))
+
+cells.append(step_md(
+    "Paso D2c", "Armar param_grid",
+    "Diccionario con todas las combinaciones a probar.",
+    "Número total de combinaciones.",
+))
+
+cells.append(code("""param_grid = dict(n_estimators=n_estimators, max_depth=max_depth, criterion=criterion)
 print('Combinaciones a probar:', len(n_estimators) * len(max_depth) * len(criterion))
 """))
 
-cells.append(md("""**Paso D3 — Ejecutar GridSearchCV:** cada combinación se evalúa con validación cruzada sobre train.
-"""))
+cells.append(step_md(
+    "Paso D3", "GridSearchCV — entrenamiento",
+    "Prueba cada combinación con CV sobre train escalado.",
+    "`best_score_` y `best_params_` impresos.",
+    ml="Elige hiperparámetros maximizando scoring en CV, no en validation.",
+))
 
 cells.append(code("""model = RandomForestClassifier(n_jobs=-1, random_state=1)
 kfold = KFold(n_splits=num_folds, shuffle=True, random_state=seed)
@@ -766,8 +1191,11 @@ print('Best CV score:', grid_result.best_score_.round(4))
 print('Best params:', grid_result.best_params_)
 """))
 
-cells.append(md("""**Paso D4 — Tabla de ranks:** todas las combinaciones ordenadas por desempeño CV.
-"""))
+cells.append(step_md(
+    "Paso D4", "Ranking de combinaciones",
+    "Lista cada combinación con rank, media CV y desviación.",
+    "Rank #1 coincide con `best_params_`.",
+))
 
 cells.append(code("""means = grid_result.cv_results_['mean_test_score']
 stds = grid_result.cv_results_['std_test_score']
@@ -777,18 +1205,30 @@ for mean, stdev, param, rank in zip(means, stds, params, ranks):
     print('#%d %f (%f) with: %r' % (rank, mean, stdev, param))
 """))
 
-cells.append(code("""# Visual: superficie de CV para cada criterion
-cv_df = pd.DataFrame(grid_result.cv_results_)
-for crit in criterion:
+cells.append(step_md(
+    "Paso D4b", "Preparar tabla para heatmap",
+    "Convierte resultados del grid en DataFrame.",
+    "Filas = una fila por combinación probada.",
+))
+
+cells.append(code("""cv_df = pd.DataFrame(grid_result.cv_results_)
+print('Filas en cv_df:', len(cv_df))
+"""))
+
+cells.append(step_md(
+    "Paso D4c", "Heatmap Grid RF",
+    "Mapa de calor: max_depth vs n_estimators (por cada criterion).",
+    "Celdas similares = zona robusta de hiperparámetros.",
+    trading="Optimizamos accuracy CV, no PnL — el heatmap no garantiza ganancias.",
+))
+
+cells.append(code("""for crit in criterion:
     sub = cv_df[cv_df['param_criterion'] == crit]
     pivot = sub.pivot(index='param_max_depth', columns='param_n_estimators', values='mean_test_score')
     plt.figure(figsize=(5, 4))
     sns.heatmap(pivot, annot=True, fmt='.3f', cmap='viridis')
     plt.title('Grid RF — criterion=%s' % crit)
     plt.show()
-"""))
-
-cells.append(md("""**Interpretación:** el `best_params_` maximiza **accuracy media en CV**, no ganancias de trading. Un árbol más profundo puede subir accuracy in-sample pero empeorar estabilidad fuera de muestra. Usa el heatmap para ver si el óptimo es “meseta” (robusto) o un pico aislado (frágil).
 """))
 
 cells.append(md("""<a id='6'></a>
@@ -809,8 +1249,12 @@ cells.append(md("""<a id='6.1'></a>
 Parámetros ganadores del grid; entrenamiento sobre **X_train sin escalar** (mismo código que fin-ml).
 """))
 
-cells.append(md("""**Paso D5 — Reentrenar Random Forest** con `best_params_` sobre todo el train (features sin escalar).
-"""))
+cells.append(step_md(
+    "Paso D5", "Modelo final en train",
+    "Instancia RandomForest con `best_params_` y ajusta en X_train **sin escalar**.",
+    "Mensaje `Entrenado con:` y dict de parámetros.",
+    ml="Replica fin-ml: escala solo en grid, no en fit final.",
+))
 
 cells.append(code("""# Usar mejores hiperparámetros del grid (fin-ml fija a mano; aquí tomamos el grid)
 bp = grid_result.best_params_
@@ -825,19 +1269,33 @@ model.fit(X_train, Y_train)
 print('Entrenado con:', bp)
 """))
 
-cells.append(md("""**Paso D6 — Predicciones en validación:** el modelo nunca vio estas filas durante el ajuste.
-"""))
+cells.append(step_md(
+    "Paso D6", "Predicciones ŷ en validation",
+    "Aplica `predict` en X_validation.",
+    "Accuracy impresa vs Y_validation.",
+    trading="Cada 1 predicho ≈ minuto donde el modelo recomienda estar largo.",
+))
 
 cells.append(code("""predictions = model.predict(X_validation)
 print('Accuracy validation:', accuracy_score(Y_validation, predictions))
 """))
 
-cells.append(md("""**Paso D7 — Matriz y reporte:** desglose por clase (0 = no largo, 1 = largo).
-"""))
+cells.append(step_md(
+    "Paso D7a", "Matriz de confusión (números)",
+    "Cuenta TP, TN, FP, FN entre real y predicho.",
+    "Matriz 2×2 impresa.",
+    trading="FP = falsa compra; FN = subida perdida.",
+))
 
 cells.append(code("""print(confusion_matrix(Y_validation, predictions))
 print(classification_report(Y_validation, predictions))
 """))
+
+cells.append(step_md(
+    "Paso D7b", "Heatmap de confusión",
+    "Visualiza la misma matriz (más fácil de discutir en clase).",
+    "Diagonal fuerte = buen acuerdo con etiqueta SMA.",
+))
 
 cells.append(code("""df_cm = pd.DataFrame(
     confusion_matrix(Y_validation, predictions),
@@ -861,9 +1319,27 @@ cells.append(md("""<a id='6.2'></a>
 ## 7.2 Intuición de variables / importancia de features
 """))
 
+cells.append(step_md(
+    "Paso D8a", "Importancias del bosque",
+    "Extrae `feature_importances_` del RF (suma 100% en el gráfico).",
+    "Series ordenada por importancia.",
+    ml="Impurity decrease — no es causalidad ni estabilidad temporal.",
+))
+
 cells.append(code("""Importance = pd.DataFrame({'Importance': model.feature_importances_ * 100}, index=X.columns)
-Importance.sort_values('Importance', axis=0, ascending=True).plot(kind='barh', color='r')
+Importance.sort_values('Importance', ascending=False).head(8)
+"""))
+
+cells.append(step_md(
+    "Paso D8b", "Gráfico de barras",
+    "Visualiza qué indicadores usa más el modelo.",
+    "Barras largas = splits más frecuentes en el bosque.",
+    trading="Si dominan RSI/ROC, el ML imita lógica momentum/tendencia.",
+))
+
+cells.append(code("""Importance.sort_values('Importance', axis=0, ascending=True).plot(kind='barh', color='steelblue', figsize=(8, 6))
 plt.xlabel('Importancia de variables (%)')
+plt.tight_layout()
 plt.show()
 """))
 
@@ -873,6 +1349,13 @@ cells.append(md("""**Interpretación:** indicadores de **momentum** (RSI, ROC, e
 cells.append(md("""<a id='6.3'></a>
 ## 7.3 Guardar modelo para uso posterior (master template)
 """))
+
+cells.append(step_md(
+    "Paso D9", "Persistir modelo",
+    "Guarda el RF entrenado con `pickle` (master template).",
+    "Archivo `finalized_model_bitcoin.sav` en el directorio de trabajo.",
+    ml="En producción versionaría modelo + fecha + features usados.",
+))
 
 cells.append(code("""filename = 'finalized_model_bitcoin.sav'
 dump(model, open(filename, 'wb'))
@@ -897,42 +1380,97 @@ cells.append(md("""---
 Retorno × señal con **`.shift(1)`** como en fin-ml.
 """))
 
-cells.append(md("""**Paso E1 — Tabla base:** alineamos predicciones y etiqueta SMA en el conjunto de validación.
-"""))
+cells.append(step_md(
+    "Paso E1a", "Crear marco de backtest",
+    "DataFrame indexado como validation.",
+    "Tabla vacía con índice correcto.",
+))
 
 cells.append(code("""backtestdata = pd.DataFrame(index=X_validation.index)
-backtestdata['signal_pred'] = predictions
-backtestdata['signal_actual'] = Y_validation
-backtestdata.head(3)
+print('Filas backtest:', len(backtestdata))
 """))
 
-cells.append(md("""**Paso E2 — Retorno de mercado:** variación minuto a minuto del `Close` (sin posición aún).
+cells.append(step_md(
+    "Paso E1b", "Señal predicha (ML)",
+    "Columna `signal_pred` = salida del Random Forest.",
+    "Valores 0/1 en `signal_pred`.",
+    trading="1 = minuto donde el modelo estaría largo.",
+))
+
+cells.append(code("""backtestdata['signal_pred'] = predictions
+backtestdata['signal_pred'].value_counts()
 """))
+
+cells.append(step_md(
+    "Paso E1c", "Señal real (SMA)",
+    "Columna `signal_actual` = etiqueta de referencia del libro.",
+    "Compara conteos con predicción.",
+))
+
+cells.append(code("""backtestdata['signal_actual'] = Y_validation
+backtestdata[['signal_pred', 'signal_actual']].head(3)
+"""))
+
+cells.append(step_md(
+    "Paso E2", "Retorno de mercado",
+    "`pct_change()` del Close en validation.",
+    "Primer valor NaN (no hay t−1).",
+    trading="Retorno buy-and-hold minuto a minuto sin filtro.",
+))
 
 cells.append(code("""backtestdata['Market Returns'] = X_validation['Close'].pct_change()
 backtestdata[['Market Returns']].head(3)
 """))
 
-cells.append(md("""**Paso E3 — Retorno con señal SMA (referencia):** posición de *t−1* × retorno en *t* (`shift(1)`).
-"""))
+cells.append(step_md(
+    "Paso E3", "Retorno estrategia SMA (benchmark)",
+    "Market return × señal SMA en t−1 (`shift(1)`).",
+    "Columna `Actual Returns`.",
+    trading="Simula seguir la regla SMA con un minuto de lag.",
+))
 
 cells.append(code("""backtestdata['Actual Returns'] = backtestdata['Market Returns'] * backtestdata['signal_actual'].shift(1)
 backtestdata[['Market Returns', 'signal_actual', 'Actual Returns']].head(5)
 """))
 
-cells.append(md("""**Paso E4 — Retorno con señal del ML:** misma regla de lag; comparamos estrategia aprendida vs SMA.
-"""))
+cells.append(step_md(
+    "Paso E4", "Retorno estrategia ML",
+    "Market return × señal predicha en t−1.",
+    "Columna `Strategy Returns`.",
+    trading="Compara PnL simple ML vs SMA en el mismo hold-out.",
+))
 
 cells.append(code("""backtestdata['Strategy Returns'] = backtestdata['Market Returns'] * backtestdata['signal_pred'].shift(1)
 backtestdata = backtestdata.reset_index()
 backtestdata[['signal_pred', 'Strategy Returns']].head(5)
 """))
 
-cells.append(md("""**Paso E5 — Acumulados:** suma simple de retornos (didáctico; en producción: log-returns, fees, slippage).
+cells.append(step_md(
+    "Paso E5a", "Retorno acumulado (números)",
+    "Suma simple de retornos minuto a minuto (didáctico).",
+    "Totales acumulados impresos para ML vs SMA.",
+    trading="No incluye comisiones Bitstamp ni slippage.",
+))
+
+cells.append(code("""cum = backtestdata[['Strategy Returns', 'Actual Returns']].cumsum()
+print('Acumulado final ML:', round(float(cum['Strategy Returns'].iloc[-1]), 4))
+print('Acumulado final SMA:', round(float(cum['Actual Returns'].iloc[-1]), 4))
 """))
+
+cells.append(step_md(
+    "Paso E5b", "Histograma de caminos acumulados",
+    "Distribución de retornos acumulados (exploración rápida).",
+    "Forma del histograma — no es walk-forward.",
+))
 
 cells.append(code("""backtestdata[['Strategy Returns', 'Actual Returns']].cumsum().hist()
 """))
+
+cells.append(step_md(
+    "Paso E5c", "Serie temporal acumulada",
+    "Gráfico principal: ¿ML supera a SMA en validation?",
+    "Curva más alta al final = mejor en esta demo simplificada.",
+))
 
 cells.append(code("""backtestdata[['Strategy Returns', 'Actual Returns']].cumsum().plot(figsize=(12, 5))
 plt.title('Retornos acumulados (suma simple) — estrategia ML vs señal SMA')

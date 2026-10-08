@@ -1,0 +1,8 @@
+# Dataset completo Kaggle (muy pesado para GitHub)
+BitstampData.csv
+BitstampData.csv.zip
+BitstampData.csv/
+data/BitstampData.csv
+
+# Muestra para clase: SÍ versionada
+!data/BitstampData_sample.csv

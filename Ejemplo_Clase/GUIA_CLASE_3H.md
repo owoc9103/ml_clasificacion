@@ -8,7 +8,7 @@
 
 ## Durante la sesión
 
-Use las tablas **“Paso a paso — aplicación”** y **“Paso a paso — modelos”** del notebook. En clase, **ejecuten celda a celda**: cada bloque markdown **Paso A/B/C…** va seguido de **una sola operación** en código.
+Cada celda markdown sigue el formato **Qué hace / Qué mirar / Lectura trading / Lectura ML**. **No saltar** celdas de texto: son la narración de la clase. Indicadores: un cálculo por celda (EMA10, EMA30, …). Benchmark: **un modelo por celda** (LR, LDA, …).
 
 | Min | Acción |
 |-----|--------|
