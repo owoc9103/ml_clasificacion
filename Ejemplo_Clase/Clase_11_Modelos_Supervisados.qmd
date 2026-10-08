@@ -50,7 +50,7 @@ format:
 ::: {.chico}
 [05]{.pildora} **Validación** · train, hold-out y CV
 
-[06]{.pildora} **Algoritmos** · nueve familias del capítulo 6
+[06]{.pildora} **Algoritmos** · mapa y formulación matemática (cap. 6)
 
 [07]{.pildora} **Métricas e hiperparámetros** · qué optimizar
 
@@ -259,6 +259,149 @@ Nueve candidatos en el benchmark completo. Cinco en modo ligero.
 | **GBM** | Gradient boosting | corrige errores con árboles pequeños |
 | **RF** | Random Forest | muchos árboles en submuestras (bagging) |
 :::
+
+## Notación (clasificación binaria, cap. 6)
+
+Observaciones $(x_i, y_i)$, $i=1,\ldots,N$, con $y_i \in \{0,1\}$ y vector de características $x_i \in \mathbb{R}^p$.
+
+::: {.fragment}
+**Objetivo:** estimar $\hat{f}(x)$ o $P(y=1 \mid x)$ y clasificar con umbral (p. ej. 0,5):
+
+$$\hat{y} = \mathbb{1}\{ P(y=1 \mid x) \geq \tau \}, \quad \tau = 0{,}5 \text{ por defecto.}$$
+:::
+
+::: {.fragment}
+En finanzas $x$ puede ser indicadores en el minuto $t$ y $y$ la señal SMA — la misma estructura que en el cuaderno de Bitcoin.
+:::
+
+## Regresión logística (LR)
+
+Modelo **logit** (enlace logístico; el template de clasificación del libro usa esta forma para $P(y=1\mid x)$):
+
+$$P(y=1 \mid x) = \Lambda(w^\top x + b) = \frac{1}{1 + \exp\bigl(-(w^\top x + b)\bigr)} = \sigma(w^\top x + b)$$
+
+::: {.fragment}
+**Pérdida (entropía cruzada)** en la muestra:
+
+$$\mathcal{L}(w,b) = -\frac{1}{N}\sum_{i=1}^{N}\Bigl[ y_i \log p_i + (1-y_i)\log(1-p_i) \Bigr], \quad p_i = P(y=1\mid x_i)$$
+:::
+
+::: {.fragment}
+**Regularización L2** (controlada por `C` en scikit-learn; $C$ grande $\Rightarrow$ menos penalización):
+
+$$\min_{w,b} \; \mathcal{L}(w,b) + \lambda \|w\|_2^2, \qquad \lambda \propto \frac{1}{C}$$
+:::
+
+## Discriminante lineal (LDA)
+
+Supone **covarianza común** $\Sigma$ en ambas clases. Para dos clases, la frontera es **lineal**.
+
+La regla de Fisher / LDA asigna la clase con mayor **función discriminante** (forma estándar del libro):
+
+$$\delta_k(x) = x^\top \Sigma^{-1} \mu_k - \tfrac{1}{2}\mu_k^\top \Sigma^{-1} \mu_k + \log \pi_k$$
+
+$\mu_k$ = media de $x$ en clase $k$, $\pi_k$ = probabilidad previa de la clase $k$.
+
+::: {.fragment}
+En binario, $\hat{y}=1$ si $\delta_1(x) > \delta_0(x)$ — equivalente a un hiperplano $w^\top x + b = 0$.
+:::
+
+## k-vecinos (KNN)
+
+Sin paramétrica: guarda la muestra. Para un $x$ nuevo, toma los **$k$** puntos más cercanos $\mathcal{N}_k(x)$ (distancia euclídea en features).
+
+$$\hat{y}(x) = \mathrm{mode}\bigl(\{ y_i : x_i \in \mathcal{N}_k(x) \}\bigr)$$
+
+Probabilidad estimada: proporción de vecinos con $y=1$. **Escala importa** — por eso en el cuaderno se estandariza en demos de curvas de validación.
+
+## Árbol de decisión (CART)
+
+Particiona recursivamente el espacio de $x$ maximizando la **reducción de impureza** en cada nodo. Criterios del libro / sklearn:
+
+**Índice de Gini** (nodo $t$, proporciones $p_j$):
+
+$$G(t) = 1 - \sum_{j} p_j^2$$
+
+**Entropía:**
+
+$$H(t) = -\sum_{j} p_j \log p_j$$
+
+::: {.fragment}
+El split elige la variable y el corte que maximicen $\Delta I = I(\text{padre}) - \bigl(w_L I(L) + w_R I(R)\bigr)$ con $I \in \{G, H\}$.
+:::
+
+**Predicción (hoja):** mayoría de $y_i$ en la hoja; $\hat{y}(x)$ = etiqueta mayoritaria del camino seguido.
+
+## Naive Bayes (NB)
+
+**Teorema de Bayes** con supuesto de **independencia condicional** entre features dada la clase:
+
+$$P(y \mid x) \propto P(y) \prod_{j=1}^{p} P(x_j \mid y)$$
+
+**Gaussian NB** (features continuas): $x_j \mid y=k \sim \mathcal{N}(\mu_{jk}, \sigma_{jk}^2)$.
+
+::: {.fragment}
+$$\hat{y} = \arg\max_{k \in \{0,1\}} \; P(y=k) \prod_{j=1}^{p} P(x_j \mid y=k)$$
+
+Rápido, pero RSI y EMA correlacionados violan la independencia — el modelo sigue siendo baseline útil.
+:::
+
+## Red neuronal (MLP, capa oculta)
+
+Una capa oculta con activación $\phi$ (p. ej. ReLU o sigmoide):
+
+$$h = \phi(W_1 x + b_1), \qquad P(y=1\mid x) = \sigma(W_2 h + b_2)$$
+
+::: {.fragment}
+**Entrenamiento:** minimizar entropía cruzada (como LR) con **retropropagación**. Hiperparámetros: tamaño de capa oculta, `alpha` (regularización L2).
+:::
+
+En el cuaderno: `MLPClassifier` como red **shallow** sin Keras.
+
+## AdaBoost (AB)
+
+Suma **ponderada** de clasificadores débiles $h_m(x) \in \{-1,+1\}$:
+
+$$F_M(x) = \sum_{m=1}^{M} \alpha_m h_m(x), \qquad \hat{y}(x) = \mathrm{sign}\bigl(F_M(x)\bigr)$$
+
+Tras cada etapa, reponderar observaciones mal clasificadas. Peso típico (error ponderado $\epsilon_m$):
+
+$$\alpha_m = \tfrac{1}{2}\ln\frac{1-\epsilon_m}{\epsilon_m}$$
+
+## Gradient Boosting (GBM)
+
+Modelo **aditivo** en funciones base (árboles pequeños $h_m$):
+
+$$F_M(x) = F_{M-1}(x) + \nu \, h_m(x)$$
+
+$\nu$ = `learning_rate`. El árbol $h_m$ ajusta el **gradiente negativo** de la pérdida (p. ej. desviaciones de la log-loss en clasificación).
+
+::: {.fragment}
+$$\hat{y}(x) = \mathbb{1}\{ F_M(x) > 0 \} \quad \text{(o probabilidad vía enlace logístico en variantes).}$$
+:::
+
+## Random Forest (RF)
+
+**Bagging** de árboles: para $B$ réplicas bootstrap de la muestra, entrena árbol $T_b$ con **subconjunto aleatorio** de variables en cada split (`max_features`).
+
+$$\hat{y}(x) = \mathrm{mode}\bigl(\{ T_b(x) \}_{b=1}^{B} \bigr)$$
+
+Probabilidad: fracción de árboles que votan clase 1.
+
+::: {.fragment}
+**Promedio de impureza** en splits define **importancia de variables** (salida del cuaderno). **Grid Search** en clase ajusta `n_estimators`, `max_depth`, `criterion` $\in \{G, H\}$.
+:::
+
+## Logit vs probit (lectura del libro)
+
+::: {.chico}
+| Enlace | $P(y=1\mid x)$ | Uso en el texto |
+|---|---|---|
+| **Logit** | $\Lambda(w^\top x+b)$ | clasificación general (LR, muchos casos cap. 6) |
+| **Probit** | $\Phi(w^\top x+b)$ | recesión / probit macro (clase 10, Fed) |
+:::
+
+En **Clase 11** el benchmark de Bitcoin usa **logística**, no probit — misma idea de índice lineal, distinto enlace $F(\cdot)$.
 
 ## Tres familias que suelen ganar en series ruidosas
 

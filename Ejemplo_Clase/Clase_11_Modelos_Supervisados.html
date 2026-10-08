@@ -1087,7 +1087,7 @@ Machine Learning para finanzas y economía
 </div><div class="column" style="width:50%;">
 <div class="chico">
 <p><span class="pildora">05</span> <strong>Validación</strong> · train, hold-out y CV</p>
-<p><span class="pildora">06</span> <strong>Algoritmos</strong> · nueve familias del capítulo 6</p>
+<p><span class="pildora">06</span> <strong>Algoritmos</strong> · mapa y formulación matemática (cap. 6)</p>
 <p><span class="pildora">07</span> <strong>Métricas e hiperparámetros</strong> · qué optimizar</p>
 <p><span class="pildora">08</span> <strong>Práctica</strong> · notebook Bitcoin en Colab + Drive</p>
 </div>
@@ -1452,6 +1452,134 @@ Machine Learning para finanzas y economía
 </tbody>
 </table>
 </div>
+</section>
+<section id="notación-clasificación-binaria-cap.-6" class="slide level2">
+<h2>Notación (clasificación binaria, cap. 6)</h2>
+<p>Observaciones <span class="math inline">\((x_i, y_i)\)</span>, <span class="math inline">\(i=1,\ldots,N\)</span>, con <span class="math inline">\(y_i \in \{0,1\}\)</span> y vector de características <span class="math inline">\(x_i \in \mathbb{R}^p\)</span>.</p>
+<div class="fragment">
+<p><strong>Objetivo:</strong> estimar <span class="math inline">\(\hat{f}(x)\)</span> o <span class="math inline">\(P(y=1 \mid x)\)</span> y clasificar con umbral (p. ej. 0,5):</p>
+<p><span class="math display">\[\hat{y} = \mathbb{1}\{ P(y=1 \mid x) \geq \tau \}, \quad \tau = 0{,}5 \text{ por defecto.}\]</span></p>
+</div>
+<div class="fragment">
+<p>En finanzas <span class="math inline">\(x\)</span> puede ser indicadores en el minuto <span class="math inline">\(t\)</span> y <span class="math inline">\(y\)</span> la señal SMA — la misma estructura que en el cuaderno de Bitcoin.</p>
+</div>
+</section>
+<section id="regresión-logística-lr" class="slide level2">
+<h2>Regresión logística (LR)</h2>
+<p>Modelo <strong>logit</strong> (enlace logístico; el template de clasificación del libro usa esta forma para <span class="math inline">\(P(y=1\mid x)\)</span>):</p>
+<p><span class="math display">\[P(y=1 \mid x) = \Lambda(w^\top x + b) = \frac{1}{1 + \exp\bigl(-(w^\top x + b)\bigr)} = \sigma(w^\top x + b)\]</span></p>
+<div class="fragment">
+<p><strong>Pérdida (entropía cruzada)</strong> en la muestra:</p>
+<p><span class="math display">\[\mathcal{L}(w,b) = -\frac{1}{N}\sum_{i=1}^{N}\Bigl[ y_i \log p_i + (1-y_i)\log(1-p_i) \Bigr], \quad p_i = P(y=1\mid x_i)\]</span></p>
+</div>
+<div class="fragment">
+<p><strong>Regularización L2</strong> (controlada por <code>C</code> en scikit-learn; <span class="math inline">\(C\)</span> grande <span class="math inline">\(\Rightarrow\)</span> menos penalización):</p>
+<p><span class="math display">\[\min_{w,b} \; \mathcal{L}(w,b) + \lambda \|w\|_2^2, \qquad \lambda \propto \frac{1}{C}\]</span></p>
+</div>
+</section>
+<section id="discriminante-lineal-lda" class="slide level2">
+<h2>Discriminante lineal (LDA)</h2>
+<p>Supone <strong>covarianza común</strong> <span class="math inline">\(\Sigma\)</span> en ambas clases. Para dos clases, la frontera es <strong>lineal</strong>.</p>
+<p>La regla de Fisher / LDA asigna la clase con mayor <strong>función discriminante</strong> (forma estándar del libro):</p>
+<p><span class="math display">\[\delta_k(x) = x^\top \Sigma^{-1} \mu_k - \tfrac{1}{2}\mu_k^\top \Sigma^{-1} \mu_k + \log \pi_k\]</span></p>
+<p><span class="math inline">\(\mu_k\)</span> = media de <span class="math inline">\(x\)</span> en clase <span class="math inline">\(k\)</span>, <span class="math inline">\(\pi_k\)</span> = probabilidad previa de la clase <span class="math inline">\(k\)</span>.</p>
+<div class="fragment">
+<p>En binario, <span class="math inline">\(\hat{y}=1\)</span> si <span class="math inline">\(\delta_1(x) &gt; \delta_0(x)\)</span> — equivalente a un hiperplano <span class="math inline">\(w^\top x + b = 0\)</span>.</p>
+</div>
+</section>
+<section id="k-vecinos-knn" class="slide level2">
+<h2>k-vecinos (KNN)</h2>
+<p>Sin paramétrica: guarda la muestra. Para un <span class="math inline">\(x\)</span> nuevo, toma los <strong><span class="math inline">\(k\)</span></strong> puntos más cercanos <span class="math inline">\(\mathcal{N}_k(x)\)</span> (distancia euclídea en features).</p>
+<p><span class="math display">\[\hat{y}(x) = \mathrm{mode}\bigl(\{ y_i : x_i \in \mathcal{N}_k(x) \}\bigr)\]</span></p>
+<p>Probabilidad estimada: proporción de vecinos con <span class="math inline">\(y=1\)</span>. <strong>Escala importa</strong> — por eso en el cuaderno se estandariza en demos de curvas de validación.</p>
+</section>
+<section id="árbol-de-decisión-cart" class="slide level2">
+<h2>Árbol de decisión (CART)</h2>
+<p>Particiona recursivamente el espacio de <span class="math inline">\(x\)</span> maximizando la <strong>reducción de impureza</strong> en cada nodo. Criterios del libro / sklearn:</p>
+<p><strong>Índice de Gini</strong> (nodo <span class="math inline">\(t\)</span>, proporciones <span class="math inline">\(p_j\)</span>):</p>
+<p><span class="math display">\[G(t) = 1 - \sum_{j} p_j^2\]</span></p>
+<p><strong>Entropía:</strong></p>
+<p><span class="math display">\[H(t) = -\sum_{j} p_j \log p_j\]</span></p>
+<div class="fragment">
+<p>El split elige la variable y el corte que maximicen <span class="math inline">\(\Delta I = I(\text{padre}) - \bigl(w_L I(L) + w_R I(R)\bigr)\)</span> con <span class="math inline">\(I \in \{G, H\}\)</span>.</p>
+</div>
+<p><strong>Predicción (hoja):</strong> mayoría de <span class="math inline">\(y_i\)</span> en la hoja; <span class="math inline">\(\hat{y}(x)\)</span> = etiqueta mayoritaria del camino seguido.</p>
+</section>
+<section id="naive-bayes-nb" class="slide level2">
+<h2>Naive Bayes (NB)</h2>
+<p><strong>Teorema de Bayes</strong> con supuesto de <strong>independencia condicional</strong> entre features dada la clase:</p>
+<p><span class="math display">\[P(y \mid x) \propto P(y) \prod_{j=1}^{p} P(x_j \mid y)\]</span></p>
+<p><strong>Gaussian NB</strong> (features continuas): <span class="math inline">\(x_j \mid y=k \sim \mathcal{N}(\mu_{jk}, \sigma_{jk}^2)\)</span>.</p>
+<div class="fragment">
+<p><span class="math display">\[\hat{y} = \arg\max_{k \in \{0,1\}} \; P(y=k) \prod_{j=1}^{p} P(x_j \mid y=k)\]</span></p>
+<p>Rápido, pero RSI y EMA correlacionados violan la independencia — el modelo sigue siendo baseline útil.</p>
+</div>
+</section>
+<section id="red-neuronal-mlp-capa-oculta" class="slide level2">
+<h2>Red neuronal (MLP, capa oculta)</h2>
+<p>Una capa oculta con activación <span class="math inline">\(\phi\)</span> (p. ej. ReLU o sigmoide):</p>
+<p><span class="math display">\[h = \phi(W_1 x + b_1), \qquad P(y=1\mid x) = \sigma(W_2 h + b_2)\]</span></p>
+<div class="fragment">
+<p><strong>Entrenamiento:</strong> minimizar entropía cruzada (como LR) con <strong>retropropagación</strong>. Hiperparámetros: tamaño de capa oculta, <code>alpha</code> (regularización L2).</p>
+</div>
+<p>En el cuaderno: <code>MLPClassifier</code> como red <strong>shallow</strong> sin Keras.</p>
+</section>
+<section id="adaboost-ab" class="slide level2">
+<h2>AdaBoost (AB)</h2>
+<p>Suma <strong>ponderada</strong> de clasificadores débiles <span class="math inline">\(h_m(x) \in \{-1,+1\}\)</span>:</p>
+<p><span class="math display">\[F_M(x) = \sum_{m=1}^{M} \alpha_m h_m(x), \qquad \hat{y}(x) = \mathrm{sign}\bigl(F_M(x)\bigr)\]</span></p>
+<p>Tras cada etapa, reponderar observaciones mal clasificadas. Peso típico (error ponderado <span class="math inline">\(\epsilon_m\)</span>):</p>
+<p><span class="math display">\[\alpha_m = \tfrac{1}{2}\ln\frac{1-\epsilon_m}{\epsilon_m}\]</span></p>
+</section>
+<section id="gradient-boosting-gbm" class="slide level2">
+<h2>Gradient Boosting (GBM)</h2>
+<p>Modelo <strong>aditivo</strong> en funciones base (árboles pequeños <span class="math inline">\(h_m\)</span>):</p>
+<p><span class="math display">\[F_M(x) = F_{M-1}(x) + \nu \, h_m(x)\]</span></p>
+<p><span class="math inline">\(\nu\)</span> = <code>learning_rate</code>. El árbol <span class="math inline">\(h_m\)</span> ajusta el <strong>gradiente negativo</strong> de la pérdida (p. ej. desviaciones de la log-loss en clasificación).</p>
+<div class="fragment">
+<p><span class="math display">\[\hat{y}(x) = \mathbb{1}\{ F_M(x) &gt; 0 \} \quad \text{(o probabilidad vía enlace logístico en variantes).}\]</span></p>
+</div>
+</section>
+<section id="random-forest-rf" class="slide level2">
+<h2>Random Forest (RF)</h2>
+<p><strong>Bagging</strong> de árboles: para <span class="math inline">\(B\)</span> réplicas bootstrap de la muestra, entrena árbol <span class="math inline">\(T_b\)</span> con <strong>subconjunto aleatorio</strong> de variables en cada split (<code>max_features</code>).</p>
+<p><span class="math display">\[\hat{y}(x) = \mathrm{mode}\bigl(\{ T_b(x) \}_{b=1}^{B} \bigr)\]</span></p>
+<p>Probabilidad: fracción de árboles que votan clase 1.</p>
+<div class="fragment">
+<p><strong>Promedio de impureza</strong> en splits define <strong>importancia de variables</strong> (salida del cuaderno). <strong>Grid Search</strong> en clase ajusta <code>n_estimators</code>, <code>max_depth</code>, <code>criterion</code> <span class="math inline">\(\in \{G, H\}\)</span>.</p>
+</div>
+</section>
+<section id="logit-vs-probit-lectura-del-libro" class="slide level2">
+<h2>Logit vs probit (lectura del libro)</h2>
+<div class="chico">
+<table class="caption-top">
+<colgroup>
+<col style="width: 33%">
+<col style="width: 33%">
+<col style="width: 33%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Enlace</th>
+<th><span class="math inline">\(P(y=1\mid x)\)</span></th>
+<th>Uso en el texto</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><strong>Logit</strong></td>
+<td><span class="math inline">\(\Lambda(w^\top x+b)\)</span></td>
+<td>clasificación general (LR, muchos casos cap. 6)</td>
+</tr>
+<tr class="even">
+<td><strong>Probit</strong></td>
+<td><span class="math inline">\(\Phi(w^\top x+b)\)</span></td>
+<td>recesión / probit macro (clase 10, Fed)</td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>En <strong>Clase 11</strong> el benchmark de Bitcoin usa <strong>logística</strong>, no probit — misma idea de índice lineal, distinto enlace <span class="math inline">\(F(\cdot)\)</span>.</p>
 </section>
 <section id="tres-familias-que-suelen-ganar-en-series-ruidosas" class="slide level2">
 <h2>Tres familias que suelen ganar en series ruidosas</h2>
