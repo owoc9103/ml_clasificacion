@@ -39,28 +39,26 @@ def step_md(
         f"### {step} — {title}\n\n",
         f"**Objetivo:** {obj}\n\n",
         f"**En palabras simples:** {simple}\n\n",
-        "**Detalle (lee antes de ejecutar):**\n\n",
-        "| Pregunta | Respuesta |\n|----------|----------|\n",
-        f"| ¿Qué hace el código? | {hace} |\n",
-        f"| ¿Qué debo ver al ejecutar? | {mirar} |\n",
+        f"**Qué hace el código:** {hace}\n\n",
+        f"**Qué debes ver al ejecutar:** {mirar}\n\n",
     ]
     if trading:
-        lines.append(f"| ¿Qué implica para Bitcoin? | {trading} |\n")
+        lines.append(f"**Qué implica para Bitcoin / trading:** {trading}\n\n")
     if ml:
-        lines.append(f"| ¿Qué implica para el modelo? | {ml} |\n")
-    lines.append(f"\n> **Confirma por escrito (cuaderno o chat):** {nota}\n")
+        lines.append(f"**Qué implica para el modelo ML:** {ml}\n\n")
+    lines.append(f"**Confirma por escrito (cuaderno o chat):** {nota}\n")
     return md("".join(lines))
 
 
 def post_md(mirar: str, trading: str = "", ml: str = "", concluye: str = ""):
     """Interpretación explícita después de ejecutar."""
-    lines = ["**✓ Celda ejecutada — interpreta así:**\n\n", f"1. {mirar}\n"]
+    lines = ["**✓ Celda ejecutada — interpreta así:**\n\n", f"{mirar}\n"]
     if trading:
-        lines.append(f"2. **Trading:** {trading}\n")
+        lines.append(f"\nEn **trading:** {trading}\n")
     if ml:
-        lines.append(f"3. **ML:** {ml}\n")
+        lines.append(f"\nEn **ML:** {ml}\n")
     if concluye:
-        lines.append(f"\n**Conclusión explícita:** {concluye}\n")
+        lines.append(f"\n**Conclusión:** {concluye}\n")
     return md("".join(lines))
 
 
@@ -101,7 +99,7 @@ cells.append(md("""# Estrategia Bitcoin con clasificación (Google Colab)
 
 **Datos:** archivo CSV de Bitstamp en **tu Google Drive** (tú defines la ruta en el notebook).
 
-**Pedagogía:** **una idea por celda** — lee **Objetivo → En palabras simples → tabla → Confirma por escrito** antes de ejecutar código.
+**Pedagogía:** **una idea por celda** — lee **Objetivo → En palabras simples → qué hace / qué ver → Confirma por escrito** antes de ejecutar código.
 
 **Partes del cuaderno:** A datos · B preparación · C modelos · D Random Forest final · E backtest.
 """))
@@ -503,7 +501,7 @@ print('Columnas:', list(dataset.columns))
 """))
 
 cells.append(md("""<a id='3.2'></a>
-## 4.2 Datos categóricos (plantilla maestra)
+## 4.2 Datos categóricos
 
 En otros problemas de ML se codifican variables categóricas (one-hot). **En Bitcoin todas las entradas son numéricas** (OHLCV). Si añadieras calendario (día de la semana), ahí codificarías esa variable.
 """))
@@ -834,7 +832,7 @@ plt.show()
 """))
 
 cells.append(md("""<a id='3.6'></a>
-## 4.6 Selección de variables (plantilla maestra)
+## 4.6 Selección de variables
 
 Aquí **mantenemos** precio, volumen e indicadores calculados, y excluimos columnas crudas ya reemplazadas por features. La variable objetivo es `signal`.
 """))
@@ -845,7 +843,7 @@ cells.append(md("""<a id='3.7'></a>
 **StandardScaler** (media 0, varianza 1) ayuda a modelos sensibles a escala (KNN, redes). Aquí se usa en el **Grid Search** del Random Forest; el **modelo final** se entrena sobre `X_train` **sin escalar**.
 """))
 
-cells.append(md("""**✓ Fin del bloque B — checklist explícito**
+cells.append(md("""**✓ Fin de la parte B — checklist explícito**
 
 - [ ] Existe columna **`signal`** (0/1) y sé qué significa en trading.
 - [ ] Calculé indicadores; **`short_mavg` / `long_mavg` ya NO están** en X (las eliminamos).

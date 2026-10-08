@@ -8,7 +8,7 @@
 
 ## Durante la sesión
 
-- Proyecte cada celda **Objetivo / En palabras simples / tabla / Confirma por escrito** antes del código.
+- Proyecte cada celda **Objetivo / En palabras simples / qué hace el código / Confirma por escrito** antes del código.
 - Parte **A:** Drive + EDA — no avanzar si `¿Existe el archivo?` es False.
 - Parte **B:** checklist al final (signal, SMA fuera de X, filas tras dropna).
 - Parte **C–D:** train vs validation, CV, Grid RF, matriz de confusión traducida.
