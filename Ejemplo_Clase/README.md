@@ -9,11 +9,13 @@ Material basado en el repositorio [fin-ml](https://github.com/tatsath/fin-ml) (C
 | `Bitcoin_Estrategia_Clasificacion_Colab.ipynb` | Notebook principal (Google Colab): **mismo flujo/código que fin-ml** + interpretaciones en español |
 | `data/BitstampData_sample.csv` | Muestra Bitstamp (minutos); datos completos en Kaggle del libro |
 
-## Colab
+## Colab (sesión ~3 horas)
 
-1. Subir el notebook a Colab o abrirlo desde GitHub (`ml_clasificacion/Ejemplo_Clase/...`).
-2. Ejecutar celdas en orden; la primera celda instala dependencias y localiza el CSV.
-3. Para reproducir resultados del libro, usar el dataset completo (~150 MB) desde Kaggle.
+1. Abrir `Bitcoin_Estrategia_Clasificacion_Colab.ipynb` en Colab.
+2. Ejecutar **Configuración de la sesión** con `MODO_CLASE_3H = True` (por defecto).
+3. Seguir bloques A–E en la agenda del notebook (~180 min).
+4. Docente: ver `GUIA_CLASE_3H.md`.
+5. Tarea / réplica del libro: `MODO_CLASE_3H = False` y dataset Kaggle completo.
 
 ## Referencias
 

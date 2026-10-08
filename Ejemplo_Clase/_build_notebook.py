@@ -20,40 +20,39 @@ def code(text: str):
 
 cells = []
 
-cells.append(md("""# Estrategia de trading con Bitcoin — modelos de clasificación
+cells.append(md("""# Estrategia Bitcoin con clasificación — **sesión 3 horas**
 
-**Referencia:** [BitcoinTradingStrategy.ipynb](https://github.com/tatsath/fin-ml/blob/master/Chapter%206%20-%20Sup.%20Learning%20-%20Classification%20models/CaseStudy3%20-%20Bitcoin%20Trading%20Strategy/BitcoinTradingStrategy.ipynb) y [Classification-MasterTemplate.ipynb](https://github.com/tatsath/fin-ml/blob/master/Chapter%206%20-%20Sup.%20Learning%20-%20Classification%20models/Classification-MasterTemplate.ipynb) (Tatsat, Puri & Lookabaugh, *Machine Learning and Data Science Blueprints for Finance*).
+**Referencias:** [BitcoinTradingStrategy.ipynb](https://github.com/tatsath/fin-ml/blob/master/Chapter%206%20-%20Sup.%20Learning%20-%20Classification%20models/CaseStudy3%20-%20Bitcoin%20Trading%20Strategy/BitcoinTradingStrategy.ipynb) · [Classification-MasterTemplate.ipynb](https://github.com/tatsath/fin-ml/blob/master/Chapter%206%20-%20Sup.%20Learning%20-%20Classification%20models/Classification-MasterTemplate.ipynb) · *Machine Learning and Data Science Blueprints for Finance*.
 
-Este cuaderno sigue **el mismo orden y la misma lógica de código** que el repositorio oficial; las celdas en español explican *qué estás viendo* y *por qué importa* en finanzas y en ML.
+---
+
+## Agenda sugerida (~180 min)
+
+| Bloque | Tiempo | Qué hacemos |
+|--------|--------|-------------|
+| **A** | 0:00 – 0:25 | Problema, datos, EDA breve |
+| **B** | 0:25 – 1:15 | Limpieza, etiqueta SMA, indicadores, correlación |
+| **C** | 1:15 – 1:55 | Métricas, hiperparámetros (gráficos), comparar modelos |
+| **D** | 1:55 – 2:35 | Grid Search RF, validación, importancia de variables |
+| **E** | 2:35 – 3:00 | Backtesting, cierre, tarea opcional (modo libro completo) |
+
+**Antes de empezar:** ejecuta la celda **Configuración de la sesión** (`MODO_CLASE_3H = True` por defecto → menos filas y CV más rápida para terminar en 3 h en Colab).
+
+**Roles:** el docente puede proyectar bloques A–B mientras los estudiantes ejecutan; en C–D conviene **Run all** desde partición train/val o pausar en el boxplot para discutir.
 """))
 
-cells.append(md("""## Contenido
+cells.append(md("""## Contenido del cuaderno
 
+* [Configuración de la sesión](#cfg)
 * [1. Definición del problema](#0)
-* [2. Inicio — librerías y datos](#1)
-    * [2.1 Cargar librerías](#1.1)
-    * [2.2 Cargar datos](#1.2)
-* [3. Análisis exploratorio (EDA)](#2)
-    * [3.1 Estadísticas descriptivas](#2.1)
+* [2. Librerías y datos](#1)
+* [3. EDA (breve)](#2)
 * [4. Preparación de datos](#3)
-    * [4.1 Limpieza](#3.1)
-    * [4.2 Datos categóricos (plantilla maestra)](#3.2)
-    * [4.3 Preparar etiqueta de clasificación](#3.3)
-    * [4.4 Ingeniería de características — indicadores técnicos](#3.4)
-    * [4.5 Visualización de datos](#3.5)
-    * [4.6 Selección de variables](#3.6)
-    * [4.7 Transformación — estandarización](#3.7)
-* [5. Evaluar algoritmos y modelos](#4)
-    * [5.1 Partición entrenamiento / validación](#4.1)
-    * [5.2 Métricas y validación cruzada](#4.2)
-    * [5.3 Guía de modelos e hiperparámetros (teoría + gráficos)](#4.3)
-    * [5.4 Comparar modelos](#4.4)
-* [6. Ajuste fino y Grid Search](#5)
-* [7. Finalizar el modelo](#6)
-    * [7.1 Resultados en validación](#6.1)
-    * [7.2 Importancia de variables](#6.2)
-    * [7.3 Guardar el modelo](#6.3)
+* [5. Evaluación y modelos](#4)
+* [6. Grid Search](#5)
+* [7. Modelo final](#6)
 * [8. Backtesting](#7)
+* [9. Modo completo fin-ml (opcional / tarea)](#8)
 """))
 
 cells.append(md("""<a id='0'></a>
@@ -111,8 +110,28 @@ from sklearn.metrics import classification_report, confusion_matrix, accuracy_sc
 from pickle import dump, load
 """))
 
-cells.append(md("""<a id='1.2'></a>
-## 2.2 Cargar datos
+cells.append(md("""<a id='cfg'></a>
+## Configuración de la sesión (ejecutar primero)
+
+- **`MODO_CLASE_3H = True`:** ~30 000 filas finales, 3 folds, 5 modelos en el benchmark, grid RF reducido → **cabe en ~3 h**.
+- **`MODO_CLASE_3H = False`:** réplica del flujo del repo (100 000 filas, 10 folds, 9 modelos) → mejor para **tarea en casa** o sesión extendida.
+"""))
+
+cells.append(code("""# --- Ajuste docente ---
+MODO_CLASE_3H = True
+
+N_FILAS = 30_000 if MODO_CLASE_3H else 100_000
+N_FOLDS = 3 if MODO_CLASE_3H else 10
+CV_SEED = 7
+
+print('Modo:', 'CLASE 3h' if MODO_CLASE_3H else 'COMPLETO fin-ml')
+print('Filas para modelado:', N_FILAS, '| Folds CV:', N_FOLDS)
+"""))
+
+cells.append(md("""---
+## ⏱ Bloque A · Problema y datos (~25 min)
+<a id='1.2'></a>
+### 2.2 Cargar datos
 
 > **Nota del libro:** en GitHub la muestra es pequeña por límite de tamaño; los números del PDF se reproducen con el CSV completo en Kaggle.
 """))
@@ -147,35 +166,26 @@ if dataset is None:
 assert dataset is not None
 """))
 
-cells.append(code("""type(dataset)
-"""))
-
-cells.append(md("""<a id='2'></a>
-# 3. Análisis exploratorio (EDA)
-<a id='2.1'></a>
-## 3.1 Estadísticas descriptivas
-
-**Cómo leerlo:** fíjate en `Close` (rango de precios), volúmenes y si hay muchos missing implícitos (el libro rellena hacia adelante). Minutos → muchísimas filas: luego usaremos las **últimas 100 000** observaciones, igual que el notebook oficial.
-"""))
-
-cells.append(code("""# shape
-dataset.shape
-"""))
-
-cells.append(code("""# peek at data
+cells.append(code("""# EDA compacto (clase): forma + cola + describe en una pasada
+try:
+    from IPython.display import display
+except ImportError:
+    display = print
 set_option('display.width', 100)
-dataset.tail(5)
-"""))
-
-cells.append(code("""# describe data
 set_option('precision', 3)
-dataset.describe()
+print('Shape:', dataset.shape)
+display(dataset.tail(5))
+display(dataset.describe())
 """))
 
-cells.append(md("""**Interpretación rápida:** compara media y desviación de `Close` con la escala del activo; volúmenes muy bajos en algunos minutos son normales en cripto. Si `count` < filas totales, hay NaNs que trataremos en limpieza.
+cells.append(md("""**Interpretación (5 min):** ¿Cuántos NaNs implícitos (`count` < filas)? ¿Rango de `Close`? En minutos hay millones de filas; modelaremos solo las **últimas `N_FILAS`** (ver config).
+
+> **Actividad A1 (3 min):** en chat, respondan: *¿Por qué no entrenar con toda la serie desde 2012 en un laptop/Colab free?* (memoria, tiempo, régimen de mercado distinto).
 """))
 
-cells.append(md("""<a id='3'></a>
+cells.append(md("""---
+## ⏱ Bloque B · Preparación (~50 min)
+<a id='3'></a>
 # 4. Preparación de datos
 <a id='3.1'></a>
 ## 4.1 Limpieza de datos
@@ -221,6 +231,10 @@ cells.append(md("""**Interpretación:** si `signal` está muy desbalanceado (p. 
 """))
 
 cells.append(code("""dataset['signal'].value_counts(normalize=True)
+"""))
+
+cells.append(md("""> **Actividad B1 (5 min):** si la clase 1 tiene > 55 %, ¿qué accuracy obtiene un modelo que *siempre* predice 1? (Respuesta: ~proporción de unos.) Por eso miramos precision/recall en trading.
+
 """))
 
 cells.append(md("""<a id='3.4'></a>
@@ -314,9 +328,10 @@ dataset = dataset.dropna(axis=0)
 dataset.tail()
 """))
 
-cells.append(code("""# correlation
+cells.append(code("""# correlation (figura más pequeña en modo clase)
 correlation = dataset.corr()
-plt.figure(figsize=(15, 15))
+figsize = (10, 10) if MODO_CLASE_3H else (15, 15)
+plt.figure(figsize=figsize)
 plt.title('Matriz de correlación')
 sns.heatmap(correlation, vmax=1, square=True, annot=False, cmap='cubehelix')
 plt.show()
@@ -337,15 +352,18 @@ cells.append(md("""<a id='3.7'></a>
 En el libro, **StandardScaler** (media 0, varianza 1) ayuda a modelos sensibles a escala (KNN, redes, SVM). En el notebook original se usa al **Grid Search** del Random Forest; el modelo final se entrena sobre `X_train` sin escalar — replicamos ese comportamiento.
 """))
 
-cells.append(md("""<a id='4'></a>
+cells.append(md("""---
+## ⏱ Bloque C · Modelos (~40 min)
+<a id='4'></a>
 # 5. Evaluar algoritmos y modelos
 <a id='4.1'></a>
 ## 5.1 Partición entrenamiento / validación
 
-Igual que GitHub: **últimas 100 000 filas**, 80 % train / 20 % validation, `random_state=1`.
+Misma lógica que fin-ml: **últimas `N_FILAS`**, 80 % train / 20 % validation, `random_state=1`.
 """))
 
-cells.append(code("""subset_dataset = dataset.iloc[-100000:]
+cells.append(code("""n_use = min(N_FILAS, len(dataset))
+subset_dataset = dataset.iloc[-n_use:]
 Y = subset_dataset['signal']
 X = subset_dataset.loc[:, subset_dataset.columns != 'signal']
 validation_size = 0.2
@@ -353,6 +371,7 @@ seed = 1
 X_train, X_validation, Y_train, Y_validation = train_test_split(
     X, Y, test_size=validation_size, random_state=1
 )
+print('Usando filas:', n_use)
 print('Train:', X_train.shape, 'Validation:', X_validation.shape)
 """))
 
@@ -363,13 +382,12 @@ cells.append(md("""<a id='4.2'></a>
 ## 5.2 Opciones de prueba y métricas de evaluación
 """))
 
-cells.append(code("""num_folds = 10
-seed = 7
+cells.append(code("""num_folds = N_FOLDS
+seed = CV_SEED
 scoring = 'accuracy'
+# En clase: descomenta UNA métrica y comenta accuracy para discutir trading long-only
 # scoring = 'precision'
 # scoring = 'recall'
-# scoring = 'neg_log_loss'
-# scoring = 'roc_auc'
 """))
 
 cells.append(md("""**Métricas (libro, cap. 6):**
@@ -399,15 +417,18 @@ cells.append(md("""<a id='4.3'></a>
 **Demostración visual** (dos features para poder graficar): efecto de `max_depth` (árbol) y `C` (logística).
 """))
 
+cells.append(md("""> **Pausa docente (2 min):** enseñar un gráfico train vs CV antes de seguir al benchmark.
+"""))
+
 cells.append(code("""demo_cols = ['RSI10', 'ROC10']
 demo = subset_dataset[demo_cols + ['signal']].dropna()
 Xd = demo[demo_cols]
 yd = demo['signal']
-Xd_tr, Xd_va, yd_tr, yd_va = train_test_split(Xd, yd, test_size=0.3, random_state=1, stratify=yd)
+Xd_tr, _, yd_tr, _ = train_test_split(Xd, yd, test_size=0.3, random_state=1, stratify=yd)
 
 from sklearn.pipeline import Pipeline
 
-depths = [2, 3, 4, 5, 6, 8, 10, 15, 20]
+depths = [2, 4, 6, 8, 10, 15] if MODO_CLASE_3H else [2, 3, 4, 5, 6, 8, 10, 15, 20]
 pipe = Pipeline([('sc', StandardScaler()), ('clf', DecisionTreeClassifier(random_state=1))])
 tr, va = validation_curve(pipe, Xd_tr, yd_tr, param_name='clf__max_depth', param_range=depths, cv=3, scoring='accuracy')
 plt.figure(figsize=(8, 4))
@@ -429,24 +450,30 @@ cells.append(md("""**Cómo leer los gráficos:** si la curva de *train* sube y l
 """))
 
 cells.append(md("""<a id='4.4'></a>
-## 5.4 Comparar modelos y algoritmos
+## 5.4 Comparar modelos
 
-### 5.4.1 Modelos de clasificación comunes  
-### 5.4.2 Modelos ensemble (boosting y bagging)
-
-Lista **idéntica** al notebook Bitcoin del repo.
+- **Modo clase:** 5 modelos representativos (rápido, ~8–12 min de CPU en Colab).
+- **Modo completo:** los 9 del notebook Bitcoin (LDA, NB, NN, AB incluidos).
 """))
 
 cells.append(code("""models = []
-models.append(('LR', LogisticRegression(max_iter=3000)))
-models.append(('LDA', LinearDiscriminantAnalysis()))
-models.append(('KNN', KNeighborsClassifier()))
-models.append(('CART', DecisionTreeClassifier()))
-models.append(('NB', GaussianNB()))
-models.append(('NN', MLPClassifier(max_iter=400)))
-models.append(('AB', AdaBoostClassifier()))
-models.append(('GBM', GradientBoostingClassifier()))
-models.append(('RF', RandomForestClassifier(n_jobs=-1)))
+if MODO_CLASE_3H:
+    models.append(('LR', LogisticRegression(max_iter=3000)))
+    models.append(('LDA', LinearDiscriminantAnalysis()))
+    models.append(('CART', DecisionTreeClassifier(max_depth=12, random_state=1)))
+    models.append(('GBM', GradientBoostingClassifier(n_estimators=50, random_state=1)))
+    models.append(('RF', RandomForestClassifier(n_estimators=50, n_jobs=-1, random_state=1)))
+else:
+    models.append(('LR', LogisticRegression(max_iter=3000)))
+    models.append(('LDA', LinearDiscriminantAnalysis()))
+    models.append(('KNN', KNeighborsClassifier()))
+    models.append(('CART', DecisionTreeClassifier()))
+    models.append(('NB', GaussianNB()))
+    models.append(('NN', MLPClassifier(max_iter=400)))
+    models.append(('AB', AdaBoostClassifier()))
+    models.append(('GBM', GradientBoostingClassifier()))
+    models.append(('RF', RandomForestClassifier(n_jobs=-1)))
+print('Modelos a evaluar:', [m[0] for m in models])
 """))
 
 cells.append(code("""results = []
@@ -470,29 +497,36 @@ plt.xticks(rotation=45)
 plt.show()
 """))
 
-cells.append(md("""**Interpretación:** en el libro, **Random Forest** y **Gradient Boosting** suelen encabezar en series financieras ruidosas; **LR/LDA** son baselines interpretables. **KNN** puede ser lento con 100k filas. Compara **media ± desv. estándar** de CV: preferimos modelos altos *y* estables (caja estrecha).
+cells.append(md("""**Interpretación (10 min discusión):** ¿Cuál gana en **media CV**? ¿La caja es estrecha (estable)? En clase, el ganador suele ser **RF o GBM**; anoten el nombre para el grid.
+
+> **Actividad C1 (5 min):** cambien `scoring` a `'recall'` y vuelvan a correr **solo** la celda del benchmark. ¿Cambia el ranking? ¿Por qué importa para una estrategia long?
 """))
 
-cells.append(md("""<a id='5'></a>
+cells.append(md("""---
+## ⏱ Bloque D · Grid y modelo final (~40 min)
+<a id='5'></a>
 # 6. Ajuste fino y Grid Search
 
-Como en el repo: se elige **Random Forest** y se explora la malla de hiperparámetros.
+Random Forest + malla como en fin-ml (reducida en modo clase).
 """))
 
-cells.append(code("""# Grid Search: Random Forest Classifier (comentarios del notebook original)
-# n_estimators: número de árboles
-# max_depth: profundidad máxima
-# criterion: 'gini' o 'entropy'
-
+cells.append(code("""# Grid Search: Random Forest (fin-ml)
 scaler = StandardScaler().fit(X_train)
 rescaledX = scaler.transform(X_train)
-n_estimators = [20, 80]
-max_depth = [5, 10]
-criterion = ['gini', 'entropy']
+
+if MODO_CLASE_3H:
+    n_estimators = [20, 50]
+    max_depth = [5, 10]
+    criterion = ['gini']
+else:
+    n_estimators = [20, 80]
+    max_depth = [5, 10]
+    criterion = ['gini', 'entropy']
+
 param_grid = dict(n_estimators=n_estimators, max_depth=max_depth, criterion=criterion)
-model = RandomForestClassifier(n_jobs=-1)
+model = RandomForestClassifier(n_jobs=-1, random_state=1)
 kfold = KFold(n_splits=num_folds, shuffle=True, random_state=seed)
-grid = GridSearchCV(estimator=model, param_grid=param_grid, scoring=scoring, cv=kfold)
+grid = GridSearchCV(estimator=model, param_grid=param_grid, scoring=scoring, cv=kfold, n_jobs=-1)
 grid_result = grid.fit(rescaledX, Y_train)
 
 print('Best: %f using %s' % (grid_result.best_score_, grid_result.best_params_))
@@ -528,10 +562,17 @@ cells.append(md("""<a id='6.1'></a>
 Parámetros ganadores del grid (como en el repo); entrenamiento sobre **X_train sin escalar** (mismo código que fin-ml).
 """))
 
-cells.append(code("""model = RandomForestClassifier(
-    criterion='gini', n_estimators=80, max_depth=10, n_jobs=-1
+cells.append(code("""# Usar mejores hiperparámetros del grid (fin-ml fija a mano; aquí tomamos el grid)
+bp = grid_result.best_params_
+model = RandomForestClassifier(
+    criterion=bp.get('criterion', 'gini'),
+    n_estimators=bp.get('n_estimators', 80),
+    max_depth=bp.get('max_depth', 10),
+    n_jobs=-1,
+    random_state=1,
 )
 model.fit(X_train, Y_train)
+print('Entrenado con:', bp)
 """))
 
 cells.append(code("""predictions = model.predict(X_validation)
@@ -580,10 +621,12 @@ dump(model, open(filename, 'wb'))
 print('Modelo guardado:', filename)
 """))
 
-cells.append(md("""<a id='7'></a>
+cells.append(md("""---
+## ⏱ Bloque E · Backtesting y cierre (~25 min)
+<a id='7'></a>
 # 8. Backtesting
 
-Misma lógica que el notebook oficial: retorno del activo × señal **desplazada un periodo** (decisión con información previa al retorno).
+Retorno × señal con **`.shift(1)`** (operas con la señal conocida al cierre anterior).
 """))
 
 cells.append(code("""backtestdata = pd.DataFrame(index=X_validation.index)
@@ -610,6 +653,16 @@ cells.append(md("""### Conclusión (adaptada del libro / repo)
 4. **Backtesting:** permite analizar riesgo/rentabilidad **antes** de arriesgar capital — sin comisiones, slippage ni tamaño de posición (limitaciones didácticas).
 
 **Próximo paso académico:** dataset completo Kaggle, split temporal, costos de transacción y validación walk-forward del capítulo de producción.
+
+> **Cierre (5 min):** ¿La estrategia ML supera a la señal SMA en el gráfico? ¿Qué falta para confiar en capital real?
+"""))
+
+cells.append(md("""<a id='8'></a>
+# 9. Modo completo fin-ml (opcional — tarea en casa)
+
+1. Arriba, pon **`MODO_CLASE_3H = False`** y vuelve a ejecutar **Runtime → Run all** (≈45–90 min con muestra GitHub; más con Kaggle completo).
+2. Compara accuracy CV y backtest con la sesión de 3 h.
+3. Entrega sugerida: captura del boxplot, `best_params_`, matriz de confusión y una página de interpretación (precision vs recall).
 """))
 
 nb = {
