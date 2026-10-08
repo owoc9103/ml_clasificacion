@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Genera el notebook alineado con fin-ml (Bitcoin + Master Template), en español."""
+"""Genera el notebook Colab: clasificación + estrategia Bitcoin (español)."""
 import json
 from pathlib import Path
 
@@ -64,15 +64,15 @@ def post_md(mirar: str, trading: str = "", ml: str = "", concluye: str = ""):
     return md("".join(lines))
 
 
-def block_intro(bloque: str, minutos: str, historia: str, al_terminar: str, pregunta: str):
+def block_intro(parte: str, historia: str, al_terminar: str, pregunta: str):
     return md(f"""---
-## ⏱ Bloque {bloque} ({minutos})
+## Parte {parte}
 
-**Qué estamos haciendo en este bloque (sin jerga):** {historia}
+**Qué hacemos aquí (sin jerga):** {historia}
 
-**Cuando termines el bloque {bloque}, debes poder decir en voz alta:** {al_terminar}
+**Al terminar la parte {parte}, debes poder decir en voz alta:** {al_terminar}
 
-**Pregunta guía del bloque:** {pregunta}
+**Pregunta guía:** {pregunta}
 """)
 
 
@@ -97,33 +97,19 @@ def feature_step(step: str, col: str, calculo: str, trading_tip: str, ml_tip: st
 
 cells = []
 
-cells.append(md("""# Estrategia Bitcoin con clasificación — **sesión 3 horas**
+cells.append(md("""# Estrategia Bitcoin con clasificación (Google Colab)
 
-**Referencias:** [BitcoinTradingStrategy.ipynb](https://github.com/tatsath/fin-ml/blob/master/Chapter%206%20-%20Sup.%20Learning%20-%20Classification%20models/CaseStudy3%20-%20Bitcoin%20Trading%20Strategy/BitcoinTradingStrategy.ipynb) · [Classification-MasterTemplate.ipynb](https://github.com/tatsath/fin-ml/blob/master/Chapter%206%20-%20Sup.%20Learning%20-%20Classification%20models/Classification-MasterTemplate.ipynb) · *Machine Learning and Data Science Blueprints for Finance*.
+**Datos:** archivo CSV de Bitstamp en **tu Google Drive** (tú defines la ruta en el notebook).
 
----
+**Pedagogía:** **una idea por celda** — lee **Objetivo → En palabras simples → tabla → Confirma por escrito** antes de ejecutar código.
 
-## Agenda sugerida (~180 min)
-
-| Bloque | Tiempo | Qué hacemos |
-|--------|--------|-------------|
-| **A** | 0:00 – 0:25 | Problema, datos, EDA breve |
-| **B** | 0:25 – 1:15 | Limpieza, etiqueta SMA, indicadores, correlación |
-| **C** | 1:15 – 1:55 | Métricas, hiperparámetros (gráficos), comparar modelos |
-| **D** | 1:55 – 2:35 | Grid Search RF, validación, importancia de variables |
-| **E** | 2:35 – 3:00 | Backtesting, cierre, tarea opcional (modo libro completo) |
-
-**Antes de empezar:** ejecuta la celda **Configuración de la sesión** (`MODO_CLASE_3H = True` por defecto → menos filas y CV más rápida para terminar en 3 h en Colab).
-
-**Pedagogía:** **una idea por celda**. Cada paso tiene: **Objetivo → En palabras simples → tabla “Qué hace / Qué debo ver” → “Confirma por escrito”**. No ejecutes código sin leer esa celda.
-
-**Roles:** en A–B **celda a celda**; en C–D puedes acelerar con Run all solo si ya entendiste partición train/val y CV.
+**Partes del cuaderno:** A datos · B preparación · C modelos · D Random Forest final · E backtest.
 """))
 
 cells.append(md("""## Cómo leer este notebook (obligatorio)
 
 1. **Aplicación Bitcoin:** en cada minuto tenemos precio → construimos indicadores → definimos si “conviene estar largo” (`signal`) → entrenamos un modelo que **imita/mejora** esa regla → simulamos ganancias con **backtest**.
-2. **Modelos ML:** es la plantilla del libro (EDA → Y/X → train/test → comparar algoritmos → Grid Search → evaluar → guardar).
+2. **Modelos ML:** EDA → separar Y/X → train/validation → comparar algoritmos → Grid Search → evaluar → guardar → backtest.
 3. **No es lo mismo:** alta **accuracy** ≠ ganar dinero; **signal=1** ≈ “comprado” en esta demo; el **backtest** es donde ves si la señal ML paga (sin comisiones).
 
 **Convención:** `Y` = columna `signal` (0 no largo, 1 largo). `X` = todo lo demás numérico. **Validation** = datos que el modelo no usa para entrenar en el paso final.
@@ -140,7 +126,8 @@ cells.append(md("""## Contenido del cuaderno
 * [6. Grid Search](#5)
 * [7. Modelo final](#6)
 * [8. Backtesting](#7)
-* [9. Modo completo fin-ml (opcional / tarea)](#8)
+* [9. Modo con más filas (opcional)](#8)
+* [Google Drive — ruta del CSV](#drive)
 """))
 
 cells.append(md("""<a id='0'></a>
@@ -159,7 +146,7 @@ cells.append(md("""<a id='0'></a>
 | 7 | Evaluar en **validación** (matriz de confusión) | Ver falsas compras vs subidas perdidas |
 | 8 | **Backtest** simple | Simular PnL antes de arriesgar capital |
 
-**Señal de referencia (libro / fin-ml):**
+**Señal de referencia (regla SMA):**
 
 - **1 = compra / largo:** SMA₁₀(Close) > SMA₆₀(Close).
 - **0 = no largo:** en caso contrario.
@@ -178,7 +165,7 @@ El ML **no sustituye** esa idea: aprende una función $f(X_t) \\approx \\text{si
 | **Decisión** | ¿Largo (1) o no (0)? | Clasificación binaria |
 | **Éxito en clase** | Entiendes falsas compras y backtest | Entiendes train/val, CV y Grid Search |
 
-## 1.2 Enfoque de modelos (plantilla maestra de clasificación)
+## 1.2 Enfoque de modelos (clasificación supervisada)
 
 | Paso ML | Sección del notebook | Idea |
 |---------|----------------------|------|
@@ -190,7 +177,7 @@ El ML **no sustituye** esa idea: aprende una función $f(X_t) \\approx \\text{si
 | 6 | Modelo final + métricas | Reportar en hold-out |
 | 7 | Persistencia + backtest | Cerrar el ciclo “investigación → decisión” |
 
-**Datos:** muestra en GitHub; números del PDF con [Kaggle — Bitstamp minutes](https://www.kaggle.com/mlfinancebook/bitstamp-bicoin-minutes-data).
+**Datos:** sube tu CSV a Drive (p. ej. `BitstampData_sample.csv` o el archivo completo) y apunta `RUTA_CSV` a esa ubicación.
 """))
 
 cells.append(md("""<a id='1'></a>
@@ -198,7 +185,7 @@ cells.append(md("""<a id='1'></a>
 <a id='1.1'></a>
 ## 2.1 Cargar librerías
 
-Mismas familias que el notebook original: `pandas`, `sklearn`, visualización y (opcional) redes vía `MLPClassifier` — equivalente práctico a la red shallow del master template en Colab sin Keras.
+Usamos `pandas`, `sklearn`, gráficos y (opcional) `MLPClassifier` como red neuronal simple en Colab.
 """))
 
 cells.append(step_md(
@@ -250,7 +237,7 @@ cells.append(step_md(
     "Paso 2.1d", "Scikit-learn — preparación y validación",
     "Importa partición de datos, CV y escalado.",
     "Nombres como `train_test_split`, `GridSearchCV`.",
-    ml="Estas funciones implementan la plantilla maestra de clasificación.",
+    ml="Estas funciones preparan partición de datos, CV y escalado.",
 ))
 
 cells.append(code("""from sklearn.preprocessing import StandardScaler
@@ -261,7 +248,7 @@ from sklearn.model_selection import (
 
 cells.append(step_md(
     "Paso 2.1e", "Scikit-learn — modelos",
-    "Importa los clasificadores que compararemos (como fin-ml).",
+    "Importa los clasificadores del benchmark.",
     "Lista de clases sin error.",
     ml="Cada algoritmo es un candidato para aproximar la etiqueta SMA.",
 ))
@@ -290,19 +277,19 @@ print('Librerías listas.')
 cells.append(md("""<a id='cfg'></a>
 ## Configuración de la sesión (ejecutar primero)
 
-- **`MODO_CLASE_3H = True`:** ~30 000 filas finales, 3 folds, 5 modelos en el benchmark, grid RF reducido → **cabe en ~3 h**.
-- **`MODO_CLASE_3H = False`:** réplica del flujo del repo (100 000 filas, 10 folds, 9 modelos) → mejor para **tarea en casa** o sesión extendida.
+- **`MODO_LIGERO = True`:** 30 000 filas, 3 folds CV, 5 modelos en benchmark, grid RF pequeño (Colab más rápido).
+- **`MODO_LIGERO = False`:** 100 000 filas, 10 folds, 9 modelos, grid más grande (más pesado).
 """))
 
 cells.append(step_md(
-    "Paso 2.2a", "Modo docente",
-    "Elige entre sesión de 3 h o réplica completa del repo.",
-    "`MODO_CLASE_3H = True` para clase; `False` para tarea.",
-    ml="Menos filas y folds = menos tiempo de cómputo en Colab.",
+    "Paso 2.2a", "Modo de cómputo",
+    "Activa modo ligero o completo según tamaño de CSV y potencia de Colab.",
+    "`MODO_LIGERO` True o False impreso.",
+    ml="Menos filas/folds = entrenamiento más rápido, menos exhaustivo.",
 ))
 
-cells.append(code("""MODO_CLASE_3H = True
-print('Modo:', 'CLASE 3h' if MODO_CLASE_3H else 'COMPLETO fin-ml')
+cells.append(code("""MODO_LIGERO = True
+print('Modo ligero:', MODO_LIGERO)
 """))
 
 cells.append(step_md(
@@ -313,77 +300,92 @@ cells.append(step_md(
     ml="Más folds = estimación más estable pero más lento.",
 ))
 
-cells.append(code("""N_FILAS = 30_000 if MODO_CLASE_3H else 100_000
-N_FOLDS = 3 if MODO_CLASE_3H else 10
+cells.append(code("""N_FILAS = 30_000 if MODO_LIGERO else 100_000
+N_FOLDS = 3 if MODO_LIGERO else 10
 CV_SEED = 7
 print('Filas para modelado:', N_FILAS, '| Folds CV:', N_FOLDS, '| Seed:', CV_SEED)
 """))
 
 cells.append(block_intro(
     "A",
-    "~25 min",
-    "Vamos a **cargar** el archivo de Bitstamp y **mirar** si los precios tienen sentido antes de calcular nada.",
-    "De dónde vienen los datos, cuántas filas hay y qué significa cada columna OHLCV.",
+    "Vamos a **conectar Google Drive**, **cargar** el CSV de Bitstamp y **mirar** si los precios tienen sentido antes de calcular nada.",
+    "Dónde está tu archivo en Drive, cuántas filas hay y qué significa cada columna OHLCV.",
     "¿Por qué cada fila es un minuto y por qué eso importa para la estrategia?",
 ))
-cells.append(md("""<a id='1.2'></a>
-### 2.2 Cargar datos
+cells.append(md("""<a id='drive'></a>
+<a id='1.2'></a>
+### 2.3 Datos desde Google Drive
 
-> **Nota del libro:** la muestra en GitHub es pequeña; los resultados del PDF usan el CSV completo en [Kaggle](https://www.kaggle.com/mlfinancebook/bitstamp-bicoin-minutes-data).
+**Antes de la clase:** sube tu CSV a Drive (ejemplo de nombre: `BitstampData_sample.csv`).
+
+**Ruta típica en Colab:** `/content/drive/MyDrive/TU_CARPETA/BitstampData_sample.csv`
+
+**Importante:** en la celda **Paso A2** debes **editar** `RUTA_CSV` con la ruta real de tu archivo (copiar desde el explorador de archivos de Drive).
 """))
 
 cells.append(step_md(
-    "Paso A1", "Rutas de datos",
-    "Define archivos locales posibles (Colab, repo clonado, carpeta `data/`).",
-    "Lista `CANDIDATES` sin ejecutar lectura aún.",
+    "Paso A1", "Montar Google Drive",
+    "En Colab, monta Drive para leer archivos con ruta `/content/drive/...`.",
+    "Mensaje de autorización (Colab) o aviso de entorno local.",
+    objetivo="Tener acceso de lectura a tu carpeta de Drive.",
+    en_palabras="Conectamos Colab con tu Google Drive como si fuera un disco.",
+    anota="¿Apareció el enlace de permisos de Google y pudiste montar Drive? (sí/no)",
+))
+
+cells.append(code("""if IN_COLAB:
+    from google.colab import drive
+    drive.mount('/content/drive')
+else:
+    print('No estás en Colab: salta el montaje; usa una ruta local en RUTA_CSV.')
+"""))
+
+cells.append(step_md(
+    "Paso A2", "Definir RUTA_CSV (EDITAR AQUÍ)",
+    "Variable de texto con la ruta **completa** al CSV en Drive (o local).",
+    "Imprime la ruta que configuraste.",
+    trading="Este archivo contiene todos los minutos de precio que usará la estrategia.",
+    objetivo="Apuntar al archivo correcto antes de leer.",
+    en_palabras="Le dices al notebook dónde está tu tabla de precios dentro de Drive.",
+    anota="Mi RUTA_CSV es: _________________________________ (copia la misma ruta del código).",
 ))
 
 cells.append(code("""from pathlib import Path
 
-CANDIDATES = [
-    Path('data/BitstampData_sample.csv'),
-    Path('Ejemplo_Clase/data/BitstampData_sample.csv'),
-    Path('/content/ml_clasificacion/Ejemplo_Clase/data/BitstampData_sample.csv'),
-]
-print('Rutas locales configuradas:', len(CANDIDATES))
+# --- EDITA SOLO ESTA LÍNEA (ruta en Drive o local) ---
+RUTA_CSV = '/content/drive/MyDrive/ML_Fin_Econ/BitstampData_sample.csv'
+
+print('RUTA_CSV configurada:')
+print(RUTA_CSV)
 """))
 
 cells.append(step_md(
-    "Paso A2", "URLs de respaldo",
-    "Si no hay CSV local, intentará descargar desde GitHub.",
-    "Lista `URLS` (ml_clasificacion y fin-ml).",
+    "Paso A3", "Comprobar que el archivo existe",
+    "Verifica que `Path(RUTA_CSV).exists()` sea True.",
+    "Debe imprimir `¿Existe el archivo? True`.",
+    objetivo="Detectar rutas mal escritas antes de un error críptico.",
+    en_palabras="Comprobamos que el CSV está donde crees que está.",
+    anota="Si sale False: corrige mayúsculas, carpetas y extensión `.csv`.",
 ))
 
-cells.append(code("""URLS = [
-    'https://raw.githubusercontent.com/owoc9103/ml_clasificacion/main/Ejemplo_Clase/data/BitstampData_sample.csv',
-    'https://raw.githubusercontent.com/tatsath/fin-ml/master/Chapter%206%20-%20Sup.%20Learning%20-%20Classification%20models/CaseStudy3%20-%20Bitcoin%20Trading%20Strategy/BitstampData_sample.csv',
-]
+cells.append(code("""archivo_datos = Path(RUTA_CSV)
+print('¿Existe el archivo?', archivo_datos.exists())
+if not archivo_datos.exists():
+    raise FileNotFoundError(
+        'No se encontró el CSV. Sube el archivo a Drive y corrige RUTA_CSV en el Paso A2.'
+    )
 """))
 
 cells.append(step_md(
-    "Paso A3", "Leer CSV",
-    "Carga el primer archivo local encontrado; si no, descarga.",
-    "Mensaje `Archivo local:` o `Descargado:` y número de filas.",
-    trading="Cada fila es un minuto de Bitstamp: base de la estrategia intradía.",
+    "Paso A4", "Leer el CSV en pandas",
+    "`read_csv(RUTA_CSV)` carga todo en `dataset`.",
+    "Imprime número de filas y columnas.",
+    trading="Cada fila = un minuto de mercado Bitstamp.",
 ))
 
-cells.append(code("""dataset = None
-for p in CANDIDATES:
-    if p.exists():
-        dataset = read_csv(p)
-        print('Archivo local:', p)
-        break
-if dataset is None:
-    for url in URLS:
-        try:
-            dataset = read_csv(url)
-            print('Descargado:', url)
-            break
-        except Exception as exc:
-            print('No disponible:', url, exc)
-
-assert dataset is not None, 'Sube data/BitstampData_sample.csv o revisa las URLs'
+cells.append(code("""dataset = read_csv(RUTA_CSV)
+print('Archivo leído:', archivo_datos)
 print('Filas cargadas:', len(dataset))
+print('Columnas:', list(dataset.columns))
 """))
 
 cells.append(md("""### Paso a paso — qué es cada columna (Bitcoin)
@@ -395,7 +397,7 @@ cells.append(md("""### Paso a paso — qué es cada columna (Bitcoin)
 | `Volume_(Currency)` | Volumen en moneda fiat (se elimina más adelante en el repo) |
 | `Weighted_Price` | Precio promedio ponderado del minuto |
 
-Cada **fila = un minuto**. La estrategia del libro decide en cada minuto si el régimen es “alcista de corto plazo” (etiqueta) usando medias e indicadores **calculados solo con información hasta ese minuto** (cuidado con *look-ahead* en proyectos propios).
+Cada **fila = un minuto**. La estrategia decide en cada minuto si el régimen es “alcista de corto plazo” (etiqueta) usando medias e indicadores **calculados solo con información hasta ese minuto** (cuidado con *look-ahead* en proyectos propios).
 """))
 
 cells.append(step_md(
@@ -415,7 +417,7 @@ set_option('precision', 3)
 cells.append(step_md(
     "Paso A5", "Dimensiones del dataset",
     "Muestra filas × columnas.",
-    "Tupla `(filas, columnas)` — compara con Kaggle completo si haces tarea.",
+    "Tupla `(filas, columnas)` — anota el número de filas de tu CSV.",
 ))
 
 cells.append(code("""print('Shape (filas, columnas):', dataset.shape)
@@ -449,7 +451,7 @@ cells.append(code("""display(dataset.describe())
 cells.append(post_md(
     "Compara `count` con el número de filas. Anota min/max de `Close`.",
     ml="NaNs o outliers extremos pueden distorsionar indicadores y modelos.",
-    concluye="Si `count` < filas, hay missing data; la limpieza del bloque B lo tratará.",
+    concluye="Si `count` < filas, hay missing data; la limpieza de la parte B lo tratará.",
 ))
 
 cells.append(md("""> **Actividad A1 (3 min):** *¿Por qué no entrenar con toda la serie desde 2012 en Colab free?* (memoria, tiempo, cambio de régimen).
@@ -457,7 +459,6 @@ cells.append(md("""> **Actividad A1 (3 min):** *¿Por qué no entrenar con toda 
 
 cells.append(block_intro(
     "B",
-    "~50 min",
     "Preparamos la tabla que el ML consumirá: limpiar → **crear la etiqueta signal (SMA)** → calcular indicadores → quitar columnas que harían trampa.",
     "Qué es `signal`, qué entra en **X**, y por qué quitamos las SMA de la etiqueta antes de entrenar.",
     "Si el modelo viera `short_mavg` en X, ¿estaría aprendiendo o copiando la regla?",
@@ -481,7 +482,7 @@ print('NaNs por columna:\\n', dataset.isnull().sum())
 
 cells.append(step_md(
     "Paso B1.2", "Forward fill",
-    "Rellena NaNs con el último valor observado (fin-ml).",
+    "Rellena NaNs con el último valor observado (forward fill).",
     "Repite el chequeo mental: menos NaNs tras ejecutar.",
     trading="Asume que el último precio sigue vigente en el hueco — razonable en minutos, dudoso en días.",
 ))
@@ -504,7 +505,7 @@ print('Columnas:', list(dataset.columns))
 cells.append(md("""<a id='3.2'></a>
 ## 4.2 Datos categóricos (plantilla maestra)
 
-En el master template (crédito alemán) se codifican variables categóricas. **En Bitcoin todas las entradas son numéricas** (OHLCV); no hay one-hot encoding. Si añadieras calendario (día de la semana), ahí aplicarías la sección 4.2 del template.
+En otros problemas de ML se codifican variables categóricas (one-hot). **En Bitcoin todas las entradas son numéricas** (OHLCV). Si añadieras calendario (día de la semana), ahí codificarías esa variable.
 """))
 
 cells.append(md("""<a id='3.3'></a>
@@ -550,7 +551,7 @@ cells.append(step_md(
     "Columna `signal` solo con 0.0 y 1.0; en `tail` ves 0/1 junto a las medias.",
     trading="**1 = en este minuto la regla SMA dice ‘entorno alcista de corto plazo’** (en la demo = estar largo). **0 = no.**",
     ml="**Esta columna es Y (la verdad que el modelo intentará predecir).** No confundir con la predicción ŷ (viene mucho más adelante).",
-    objetivo="Tener la variable objetivo Y definida de forma reproducible (misma regla que fin-ml).",
+    objetivo="Tener la variable objetivo Y definida con la regla SMA 10 vs 60.",
     en_palabras="Traducimos el cruce de medias en un sí/no numérico para que sklearn pueda entrenar.",
     anota="En tus palabras: signal=1 significa _______________; signal=0 significa _______________.",
 ))
@@ -592,13 +593,13 @@ cells.append(md("""<a id='3.4'></a>
 | **Estocástico** | %K, %D | Posición del cierre dentro del rango High–Low reciente |
 | **Liquidez / nivel** | `Close`, `Volume_(BTC)`, `Weighted_Price` | Contexto de precio y actividad |
 
-A continuación: **un cálculo por celda** (mismas fórmulas que fin-ml). Lee **Qué hace / Qué mirar** antes de ejecutar.
+A continuación: **un cálculo por celda**. Lee **Objetivo / En palabras simples** antes de ejecutar.
 """))
 
 # --- Indicadores técnicos (generados celda a celda) ---
 cells.append(step_md(
     "Paso B4.0a", "Definir función EMA",
-    "Crea la función auxiliar `EMA(df, n)` (fin-ml).",
+    "Crea la función auxiliar `EMA(df, n)`.",
     "Solo define la función; aún no modifica `dataset`.",
     trading="EMA pondera más los cierres recientes que una SMA.",
 ))
@@ -740,7 +741,7 @@ print('%D{n} (último):', round(float(dataset['%D{n}'].iloc[-1]), 2))
 
 cells.append(step_md(
     "Paso B4.6a", "Definir función MA",
-    "Media móvil simple con `min_periods=n` (fin-ml).",
+    "Media móvil simple con `min_periods=n`.",
     "Función `MA` definida.",
 ))
 
@@ -825,7 +826,7 @@ cells.append(step_md(
     ml="LDA/LR sufren con colinealidad; RF/GBM la toleran mejor.",
 ))
 
-cells.append(code("""figsize = (10, 10) if MODO_CLASE_3H else (15, 15)
+cells.append(code("""figsize = (10, 10) if MODO_LIGERO else (15, 15)
 plt.figure(figsize=figsize)
 plt.title('Matriz de correlación')
 sns.heatmap(correlation, vmax=1, square=True, annot=False, cmap='cubehelix')
@@ -835,13 +836,13 @@ plt.show()
 cells.append(md("""<a id='3.6'></a>
 ## 4.6 Selección de variables (plantilla maestra)
 
-El master template usa filtros y dominio del negocio. Aquí **mantenemos el set del repo** (precio, volumen, indicadores) y excluimos solo columnas crudas ya reemplazadas por features. La variable objetivo es `signal`.
+Aquí **mantenemos** precio, volumen e indicadores calculados, y excluimos columnas crudas ya reemplazadas por features. La variable objetivo es `signal`.
 """))
 
 cells.append(md("""<a id='3.7'></a>
 ## 4.7 Transformación — estandarización
 
-En el libro, **StandardScaler** (media 0, varianza 1) ayuda a modelos sensibles a escala (KNN, redes, SVM). En el notebook original se usa al **Grid Search** del Random Forest; el modelo final se entrena sobre `X_train` sin escalar — replicamos ese comportamiento.
+**StandardScaler** (media 0, varianza 1) ayuda a modelos sensibles a escala (KNN, redes). Aquí se usa en el **Grid Search** del Random Forest; el **modelo final** se entrena sobre `X_train` **sin escalar**.
 """))
 
 cells.append(md("""**✓ Fin del bloque B — checklist explícito**
@@ -850,12 +851,11 @@ cells.append(md("""**✓ Fin del bloque B — checklist explícito**
 - [ ] Calculé indicadores; **`short_mavg` / `long_mavg` ya NO están** en X (las eliminamos).
 - [ ] Sé cuántas filas quedan tras `dropna`.
 
-Si algún ítem no lo tienes claro, **vuelve al paso B3 o B5** antes del bloque C.
+Si algún ítem no lo tienes claro, **vuelve al paso B3 o B5** antes de la parte C.
 """))
 
 cells.append(block_intro(
     "C",
-    "~40 min",
     "Separamos **Y** y **X**, partimos train/validation y **comparamos algoritmos** con validación cruzada (sin mirar validation todavía para elegir).",
     "Qué es train vs validation, qué mide CV, y cuál modelo candidato llevar al Grid Search (casi siempre RF).",
     "¿Por qué no entrenamos y evaluamos en las mismas filas si queremos saber si funciona en el futuro?",
@@ -883,7 +883,7 @@ Precio minuto a minuto → indicadores X_t → modelo → ŷ_t (0/1)
 3. **80 % train** → ajustar modelos; **20 % validation** → simular “futuro” no visto en el ajuste.
 4. `stratify=Y` mantiene proporción de 0/1 en ambos conjuntos.
 
-Misma lógica que fin-ml: `random_state=1`.
+Usamos `random_state=1` para reproducibilidad.
 """))
 
 cells.append(step_md(
@@ -945,7 +945,7 @@ print('Train:', X_train.shape, 'Validation:', X_validation.shape)
 
 cells.append(post_md(
     "Comprueba que la proporción de Y=1 sea similar en train y validation.",
-    ml="No es split temporal estricto; es el mismo esquema que fin-ml para comparar.",
+    ml="No es split temporal estricto; es un hold-out aleatorio 80/20.",
 ))
 
 cells.append(md("""<a id='4.2'></a>
@@ -986,7 +986,7 @@ cells.append(code("""scoring = 'accuracy'
 print('Scoring activo:', scoring)
 """))
 
-cells.append(md("""**Métricas (libro, cap. 6):**
+cells.append(md("""**Métricas de clasificación:**
 
 - **Accuracy:** $\\frac{TP+TN}{N}$ — útil si clases balanceadas.
 - **Precision (clase 1):** $\\frac{TP}{TP+FP}$ — penaliza falsas compras.
@@ -1000,7 +1000,7 @@ Para estrategias **long-only**, a menudo se discute precision vs recall (ver con
 1. Partir **train** en `N_FOLDS` bloques temporales aleatorios (KFold).
 2. En cada fold: entrenar en k−1 bloques, medir accuracy en el bloque restante.
 3. Promediar → estimación de error **sin usar validation**.
-4. Repetir para cada algoritmo → **boxplot** al final del bloque C.
+4. Repetir para cada algoritmo → **boxplot** al final de la parte C.
 """))
 
 cells.append(md("""<a id='4.3'></a>
@@ -1016,9 +1016,9 @@ cells.append(md("""<a id='4.3'></a>
 | **GBM** | $X_t$ | 0/1 | Corrige errores de árboles pequeños secuencialmente |
 | **RF** | $X_t$ | 0/1 | Muchos árboles en submuestras → robustez al ruido minuto a minuto |
 
-En **modo completo** (`MODO_CLASE_3H = False`) se añaden KNN, NB, NN, AdaBoost como en fin-ml.
+Con **`MODO_LIGERO = False`** se añaden KNN, NB, NN y AdaBoost al benchmark.
 
-| Código | Modelo | Idea (Blueprints) | Hiperparámetro clave | Si lo subes demasiado… |
+| Código | Modelo | Idea | Hiperparámetro clave | Si lo subes demasiado… |
 |--------|--------|-------------------|----------------------|-------------------------|
 | LR | Regresión logística | $P(y=1|x)=\\sigma(w^\\top x+b)$ | `C` (regularización) | Sobreajuste, coeficientes explosivos |
 | LDA | Discriminante lineal | Frontera lineal, covarianza compartida | — | Modelo rígido |
@@ -1059,7 +1059,7 @@ cells.append(step_md(
     trading="Profundidad alta = reglas muy específicas al ruido del minuto.",
 ))
 
-cells.append(code("""depths = [2, 4, 6, 8, 10, 15] if MODO_CLASE_3H else [2, 3, 4, 5, 6, 8, 10, 15, 20]
+cells.append(code("""depths = [2, 4, 6, 8, 10, 15] if MODO_LIGERO else [2, 3, 4, 5, 6, 8, 10, 15, 20]
 pipe = Pipeline([('sc', StandardScaler()), ('clf', DecisionTreeClassifier(random_state=1))])
 tr, va = validation_curve(pipe, Xd_tr, yd_tr, param_name='clf__max_depth', param_range=depths, cv=3, scoring='accuracy')
 plt.figure(figsize=(8, 4))
@@ -1096,10 +1096,10 @@ cells.append(md("""<a id='4.4'></a>
 1. Ejecutar la celda que define la **lista `models`**.
 2. Ejecutar el **bucle CV**: imprime `media (desv. estándar)` por modelo.
 3. Ejecutar el **boxplot**: cada caja = distribución de accuracy en folds.
-4. **Elegir candidato** para Grid Search (en el libro: Random Forest).
+4. **Elegir candidato** para Grid Search (suele ser Random Forest).
 
 - **Modo clase:** 5 modelos (~8–12 min Colab).
-- **Modo completo:** 9 modelos (fin-ml).
+- **Modo completo:** 9 modelos.
 """))
 
 cells.append(step_md(
@@ -1114,7 +1114,7 @@ kfold = KFold(n_splits=num_folds, shuffle=True, random_state=seed)
 print('Benchmark CV — folds:', num_folds, '| scoring:', scoring)
 """))
 
-MODELS_3H = [
+MODELS_LIGERO = [
     ("LR", "LogisticRegression(max_iter=3000)", "Frontera lineal; baseline.", "P(compra) ~ w·indicadores."),
     ("LDA", "LinearDiscriminantAnalysis()", "Frontera lineal LDA.", "Baseline rápido en alta dimensión."),
     ("CART", "DecisionTreeClassifier(max_depth=12, random_state=1)", "Árbol prof. limitada 12.", "Reglas locales minuto a minuto."),
@@ -1124,11 +1124,11 @@ MODELS_3H = [
 
 cells.append(step_md(
     "Paso C4.2", "Lista de modelos (modo sesión)",
-    "Muestra qué algoritmos se evaluarán según `MODO_CLASE_3H`.",
+    "Muestra qué algoritmos se evaluarán según `MODO_LIGERO`.",
     "Lista impresa de códigos LR, LDA, …",
 ))
 
-cells.append(code("""if MODO_CLASE_3H:
+cells.append(code("""if MODO_LIGERO:
     bench_list = [
         ('LR', LogisticRegression(max_iter=3000)),
         ('LDA', LinearDiscriminantAnalysis()),
@@ -1151,7 +1151,7 @@ else:
 print('Modelos:', [b[0] for b in bench_list])
 """))
 
-for tag, _expr, ml_tip, tr_tip in MODELS_3H:
+for tag, _expr, ml_tip, tr_tip in MODELS_LIGERO:
     cells.append(step_md(
         f"Paso C4.3-{tag}", f"CV — {tag}",
         f"Un fold a la vez: entrena **{tag}** en k−1 particiones y mide la métrica `scoring` en la restante.",
@@ -1180,13 +1180,13 @@ for tag, ml_tip, tr_tip in [
 ]:
     cells.append(step_md(
         f"Paso C4.3-{tag}", f"CV — {tag} (solo modo completo)",
-        f"Evalúa **{tag}** cuando `MODO_CLASE_3H = False`.",
-        "Si estás en modo 3 h, verás mensaje de omitido.",
+        f"Evalúa **{tag}** cuando `MODO_LIGERO = False`.",
+        "En modo ligero verás mensaje de omitido.",
         ml=ml_tip,
         trading=tr_tip,
     ))
-    cells.append(code(f"""if MODO_CLASE_3H:
-    print('{tag}: omitido en MODO_CLASE_3H')
+    cells.append(code(f"""if MODO_LIGERO:
+    print('{tag}: omitido en MODO_LIGERO')
 else:
     for _code, _model in bench_list:
         if _code == '{tag}':
@@ -1221,7 +1221,6 @@ cells.append(md("""**Interpretación (10 min discusión):** ¿Cuál gana en **me
 
 cells.append(block_intro(
     "D",
-    "~40 min",
     "Afinamos **Random Forest** (Grid Search), entrenamos el modelo final, lo evaluamos en **validation** y vemos **qué indicadores pesan más**.",
     "Los mejores hiperparámetros, accuracy en validation, y qué significa cada celda de la matriz de confusión en dinero simulado.",
     "¿El Grid optimiza ganancias o solo accuracy? (respuesta: solo la métrica `scoring`, por defecto accuracy).",
@@ -1231,9 +1230,9 @@ cells.append(md("""<a id='5'></a>
 
 ### Paso a paso — Grid Search (modelos)
 
-1. **Elegir familia:** Random Forest (suele ganar en el caso del libro).
+1. **Elegir familia:** Random Forest (suele ganar el benchmark).
 2. **Definir malla:** `n_estimators`, `max_depth`, `criterion` (Gini vs entropía).
-3. **Escalar X_train** con `StandardScaler` (como fin-ml en esta etapa).
+3. **Escalar X_train** con `StandardScaler` (solo para el Grid Search).
 4. **GridSearchCV** prueba cada combinación × cada fold → guarda `best_params_`.
 5. **Interpretar heatmap:** celdas similares = zona robusta; pico aislado = cuidado.
 
@@ -1248,7 +1247,7 @@ cells.append(step_md(
     "Paso D1", "Ajustar StandardScaler",
     "Calcula media/desvío de cada feature en train y transforma X_train.",
     "Media ~0 en la primera feature tras escalar.",
-    ml="Solo para Grid Search RF en fin-ml; modelo final no usa escala.",
+    ml="Solo para Grid Search RF; el modelo final no usa escala.",
 ))
 
 cells.append(code("""scaler = StandardScaler().fit(X_train)
@@ -1263,7 +1262,7 @@ cells.append(step_md(
     trading="Más árboles → señal más estable, más tiempo de cómputo.",
 ))
 
-cells.append(code("""if MODO_CLASE_3H:
+cells.append(code("""if MODO_LIGERO:
     n_estimators = [20, 50]
 else:
     n_estimators = [20, 80]
@@ -1278,7 +1277,7 @@ cells.append(step_md(
 ))
 
 cells.append(code("""max_depth = [5, 10]
-criterion = ['gini'] if MODO_CLASE_3H else ['gini', 'entropy']
+criterion = ['gini'] if MODO_LIGERO else ['gini', 'entropy']
 print('max_depth:', max_depth, '| criterion:', criterion)
 """))
 
@@ -1356,23 +1355,23 @@ cells.append(md("""<a id='6.1'></a>
 
 ### Paso a paso — evaluación final (ML + trading)
 
-1. **Reentrenar** RF con `best_params_` sobre todo **X_train** (sin escalar → igual que fin-ml).
+1. **Reentrenar** RF con `best_params_` sobre todo **X_train** (sin escalar).
 2. **Predecir** en **X_validation** → vector `predictions`.
 3. **Accuracy / reporte:** calidad global de clasificación.
 4. **Matriz de confusión:** traducir TP/FP a “compras acertadas” vs “falsas alarmas”.
 5. **Importancia de variables:** qué indicadores usa el bosque para imitar/mejorar la SMA.
 
-Parámetros ganadores del grid; entrenamiento sobre **X_train sin escalar** (mismo código que fin-ml).
+Parámetros ganadores del grid; entrenamiento sobre **X_train sin escalar**.
 """))
 
 cells.append(step_md(
     "Paso D5", "Modelo final en train",
     "Instancia RandomForest con `best_params_` y ajusta en X_train **sin escalar**.",
     "Mensaje `Entrenado con:` y dict de parámetros.",
-    ml="Replica fin-ml: escala solo en grid, no en fit final.",
+    ml="Escala solo en grid; no en el fit final.",
 ))
 
-cells.append(code("""# Usar mejores hiperparámetros del grid (fin-ml fija a mano; aquí tomamos el grid)
+cells.append(code("""# Mejores hiperparámetros del Grid Search
 bp = grid_result.best_params_
 model = RandomForestClassifier(
     criterion=bp.get('criterion', 'gini'),
@@ -1464,16 +1463,16 @@ plt.tight_layout()
 plt.show()
 """))
 
-cells.append(md("""**Interpretación:** indicadores de **momentum** (RSI, ROC, estocástico) suelen aparecer arriba si la etiqueta SMA es tendencial. No implica causalidad ni estabilidad temporal: reentrena y compara importancias en distintas ventanas (walk-forward del libro).
+cells.append(md("""**Interpretación:** indicadores de **momentum** (RSI, ROC, estocástico) suelen aparecer arriba si la etiqueta SMA es tendencial. No implica causalidad ni estabilidad temporal: reentrena y compara importancias en distintas ventanas (walk-forward en ventanas distintas).
 """))
 
 cells.append(md("""<a id='6.3'></a>
-## 7.3 Guardar modelo para uso posterior (master template)
+## 7.3 Guardar modelo para uso posterior
 """))
 
 cells.append(step_md(
     "Paso D9", "Persistir modelo",
-    "Guarda el RF entrenado con `pickle` (master template).",
+    "Guarda el RF entrenado con `pickle`.",
     "Archivo `finalized_model_bitcoin.sav` en el directorio de trabajo.",
     ml="En producción versionaría modelo + fecha + features usados.",
 ))
@@ -1485,7 +1484,6 @@ print('Modelo guardado:', filename)
 
 cells.append(block_intro(
     "E",
-    "~25 min",
     "Convertimos predicciones 0/1 en **retornos minuto a minuto** y comparamos **estrategia ML vs regla SMA** (con un minuto de retraso).",
     "Si la curva acumulada del ML queda arriba o abajo de la SMA, y qué falta (comisiones, split temporal) para confiar en dinero real.",
     "¿Por qué multiplicamos retorno × señal de t−1 y no de t?",
@@ -1496,14 +1494,14 @@ cells.append(md("""<a id='7'></a>
 ### Paso a paso — simulación (aplicación Bitcoin)
 
 1. **`Market Returns`** = $\\frac{P_t - P_{t-1}}{P_{t-1}}$ (retorno del BTC en ese minuto).
-2. **`signal_actual`** = etiqueta SMA (referencia “benchmark” del libro).
+2. **`signal_actual`** = etiqueta SMA (referencia / benchmark).
 3. **`signal_pred`** = predicción del Random Forest.
 4. **Posición con lag:** usamos `shift(1)` → la señal de $t-1$ multiplica el retorno de $t$ (evita usar la señal del mismo minuto del retorno en esta demo).
 5. **`Strategy Returns`** = retorno de mercado × señal predicha (0 o 1) → simula estar largo solo cuando el modelo dice 1.
 6. **`Actual Returns`** = mismo esquema con la señal SMA → comparar ML vs regla original.
 7. **Gráfico acumulado:** suma simple de retornos (didáctico; en producción usar log-returns, comisiones y slippage).
 
-Retorno × señal con **`.shift(1)`** como en fin-ml.
+Retorno × señal con **`.shift(1)`** (decisión en t−1, retorno en t).
 """))
 
 cells.append(step_md(
@@ -1529,7 +1527,7 @@ backtestdata['signal_pred'].value_counts()
 
 cells.append(step_md(
     "Paso E1c", "Señal real (SMA)",
-    "Columna `signal_actual` = etiqueta de referencia del libro.",
+    "Columna `signal_actual` = etiqueta SMA de referencia.",
     "Compara conteos con predicción.",
 ))
 
@@ -1552,7 +1550,7 @@ cells.append(step_md(
     "Paso E3", "Retorno estrategia SMA (benchmark)",
     "`Actual Returns = Market Returns * signal_actual.shift(1)`.",
     "Columna `Actual Returns`; primera fila suele ser NaN por el lag.",
-    trading="**Interpretación:** solo gano el retorno del minuto t si **ayer (t−1) la SMA decía estar largo (1).** Es la referencia del libro.",
+    trading="**Interpretación:** solo gano el retorno del minuto t si **en t−1 la SMA decía estar largo (1).** Es la referencia SMA.",
     ml="No usamos ML aquí; es el baseline para comparar.",
     objetivo="Tener la curva de PnL de la regla SMA en el mismo hold-out que el modelo.",
     en_palabras="Si la SMA decía ‘sí’ el minuto anterior, me quedo expuesto al movimiento de este minuto.",
@@ -1608,24 +1606,24 @@ plt.legend(['Estrategia ML', 'Señal SMA'])
 plt.show()
 """))
 
-cells.append(md("""### Conclusión (adaptada del libro / repo)
+cells.append(md("""### Conclusión
 
 1. **Formulación:** convertir el objetivo de inversión en etiquetas y features es el primer paso; aquí la etiqueta sigue una regla SMA interpretable.
-2. **Feature engineering:** indicadores de tendencia y momentum aumentan poder predictivo frente a usar solo precio crudo.
-3. **Métricas:** accuracy o AUC son razonables en clasificación; si priorizas **long** con pocos falsos positivos, mira **precision**; si no quieres perder subidas, **recall**.
-4. **Backtesting:** permite analizar riesgo/rentabilidad **antes** de arriesgar capital — sin comisiones, slippage ni tamaño de posición (limitaciones didácticas).
+2. **Feature engineering:** indicadores de tendencia y momentum aportan información frente a usar solo precio crudo.
+3. **Métricas:** accuracy es útil si las clases están balanceadas; para **long-only** revisa **precision** (falsas compras) y **recall** (subidas perdidas).
+4. **Backtesting:** simula rentabilidad **antes** de arriesgar capital — sin comisiones, slippage ni tamaño de posición.
 
-**Próximo paso académico:** dataset completo Kaggle, split temporal, costos de transacción y validación walk-forward del capítulo de producción.
+**Próximo paso:** CSV más grande en Drive, split temporal, comisiones y validación walk-forward.
 
-> **Cierre (5 min):** ¿La estrategia ML supera a la señal SMA en el gráfico? ¿Qué falta para confiar en capital real?
+> **Cierre:** ¿La estrategia ML supera a la señal SMA en el gráfico? ¿Qué falta para confiar en capital real?
 """))
 
 cells.append(md("""<a id='8'></a>
-# 9. Modo completo fin-ml (opcional — tarea en casa)
+# 9. Modo con más filas (opcional)
 
-1. Arriba, pon **`MODO_CLASE_3H = False`** y vuelve a ejecutar **Runtime → Run all** (≈45–90 min con muestra GitHub; más con Kaggle completo).
-2. Compara accuracy CV y backtest con la sesión de 3 h.
-3. Entrega sugerida: captura del boxplot, `best_params_`, matriz de confusión y una página de interpretación (precision vs recall).
+1. Pon **`MODO_LIGERO = False`**, usa un CSV más grande en **`RUTA_CSV`** y ejecuta **Runtime → Run all**.
+2. Compara accuracy CV y backtest con el modo ligero.
+3. Entrega sugerida: boxplot, `best_params_`, matriz de confusión e interpretación precision vs recall.
 """))
 
 nb = {
