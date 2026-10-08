@@ -18,28 +18,81 @@ def code(text: str):
     }
 
 
-def step_md(step: str, title: str, hace: str, mirar: str, trading: str = "", ml: str = ""):
-    """Markdown pedagógico uniforme antes de cada celda de código."""
+def step_md(
+    step: str,
+    title: str,
+    hace: str,
+    mirar: str,
+    trading: str = "",
+    ml: str = "",
+    objetivo: str = "",
+    en_palabras: str = "",
+    anota: str = "",
+):
+    """Markdown explícito antes de cada celda de código."""
+    obj = objetivo or f"Completar «{title}» y verificar la salida antes de continuar."
+    simple = en_palabras or (
+        f"{hace} En trading: {trading}" if trading else hace
+    )
+    nota = anota or f"La salida coincide con: {mirar}"
     lines = [
-        f"**{step} — {title}**\n\n",
-        f"- **Qué hace:** {hace}\n",
-        f"- **Qué mirar en la salida:** {mirar}\n",
+        f"### {step} — {title}\n\n",
+        f"**Objetivo:** {obj}\n\n",
+        f"**En palabras simples:** {simple}\n\n",
+        "**Detalle (lee antes de ejecutar):**\n\n",
+        "| Pregunta | Respuesta |\n|----------|----------|\n",
+        f"| ¿Qué hace el código? | {hace} |\n",
+        f"| ¿Qué debo ver al ejecutar? | {mirar} |\n",
     ]
     if trading:
-        lines.append(f"- **Lectura trading (Bitcoin):** {trading}\n")
+        lines.append(f"| ¿Qué implica para Bitcoin? | {trading} |\n")
     if ml:
-        lines.append(f"- **Lectura ML:** {ml}\n")
+        lines.append(f"| ¿Qué implica para el modelo? | {ml} |\n")
+    lines.append(f"\n> **Confirma por escrito (cuaderno o chat):** {nota}\n")
     return md("".join(lines))
 
 
-def post_md(mirar: str, trading: str = "", ml: str = ""):
-    """Interpretación breve después de ejecutar (opcional)."""
-    lines = ["**Después de ejecutar:**\n\n", f"- {mirar}\n"]
+def post_md(mirar: str, trading: str = "", ml: str = "", concluye: str = ""):
+    """Interpretación explícita después de ejecutar."""
+    lines = ["**✓ Celda ejecutada — interpreta así:**\n\n", f"1. {mirar}\n"]
     if trading:
-        lines.append(f"- *Trading:* {trading}\n")
+        lines.append(f"2. **Trading:** {trading}\n")
     if ml:
-        lines.append(f"- *ML:* {ml}\n")
+        lines.append(f"3. **ML:** {ml}\n")
+    if concluye:
+        lines.append(f"\n**Conclusión explícita:** {concluye}\n")
     return md("".join(lines))
+
+
+def block_intro(bloque: str, minutos: str, historia: str, al_terminar: str, pregunta: str):
+    return md(f"""---
+## ⏱ Bloque {bloque} ({minutos})
+
+**Qué estamos haciendo en este bloque (sin jerga):** {historia}
+
+**Cuando termines el bloque {bloque}, debes poder decir en voz alta:** {al_terminar}
+
+**Pregunta guía del bloque:** {pregunta}
+""")
+
+
+def feature_step(step: str, col: str, calculo: str, trading_tip: str, ml_tip: str = ""):
+    ml_tip = ml_tip or (
+        f"La columna `{col}` entra en **X**; el Random Forest la usará junto con las demás "
+        "para predecir si `signal` es 0 o 1."
+    )
+    cells.append(step_md(
+        step,
+        f"Indicador `{col}`",
+        calculo,
+        f"Se imprime el último valor de `{col}` (número finito, no NaN).",
+        trading=trading_tip,
+        ml=ml_tip,
+        objetivo=f"Dejar creada la columna `{col}` en `dataset`.",
+        en_palabras=f"Convertimos el historial de precios en el número `{col}`; "
+        f"ese número resume una idea de mercado (tendencia, momentum, etc.).",
+        anota=f"Último `{col}` = _____ (rellena). ¿Tiene sentido frente al Close actual?",
+    ))
 
 
 cells = []
@@ -62,9 +115,18 @@ cells.append(md("""# Estrategia Bitcoin con clasificación — **sesión 3 horas
 
 **Antes de empezar:** ejecuta la celda **Configuración de la sesión** (`MODO_CLASE_3H = True` por defecto → menos filas y CV más rápida para terminar en 3 h en Colab).
 
-**Pedagogía:** **una idea por celda** — markdown de interpretación → código corto → siguiente paso. Evita saltar bloques largos sin leer.
+**Pedagogía:** **una idea por celda**. Cada paso tiene: **Objetivo → En palabras simples → tabla “Qué hace / Qué debo ver” → “Confirma por escrito”**. No ejecutes código sin leer esa celda.
 
-**Roles:** en A–B conviene ejecutar **celda a celda**; en C–D puedes usar **Run all** desde la partición train/val si el tiempo apremia.
+**Roles:** en A–B **celda a celda**; en C–D puedes acelerar con Run all solo si ya entendiste partición train/val y CV.
+"""))
+
+cells.append(md("""## Cómo leer este notebook (obligatorio)
+
+1. **Aplicación Bitcoin:** en cada minuto tenemos precio → construimos indicadores → definimos si “conviene estar largo” (`signal`) → entrenamos un modelo que **imita/mejora** esa regla → simulamos ganancias con **backtest**.
+2. **Modelos ML:** es la plantilla del libro (EDA → Y/X → train/test → comparar algoritmos → Grid Search → evaluar → guardar).
+3. **No es lo mismo:** alta **accuracy** ≠ ganar dinero; **signal=1** ≈ “comprado” en esta demo; el **backtest** es donde ves si la señal ML paga (sin comisiones).
+
+**Convención:** `Y` = columna `signal` (0 no largo, 1 largo). `X` = todo lo demás numérico. **Validation** = datos que el modelo no usa para entrenar en el paso final.
 """))
 
 cells.append(md("""## Contenido del cuaderno
@@ -103,6 +165,18 @@ cells.append(md("""<a id='0'></a>
 - **0 = no largo:** en caso contrario.
 
 El ML **no sustituye** esa idea: aprende una función $f(X_t) \\approx \\text{signal}_t$ usando muchos indicadores a la vez.
+
+### Historia completa en una frase (léela en voz alta)
+
+> Cargamos minutos de Bitcoin → limpiamos → marcamos cada minuto con **0/1** según medias móviles → calculamos RSI, EMA, etc. → entrenamos un clasificador para predecir ese 0/1 → medimos si acierta y si **ganaría dinero** retrasando la señal un minuto.
+
+### Dos hilos que SIEMPRE van juntos
+
+| | **Hilo trading** | **Hilo ML** |
+|---|------------------|-------------|
+| **Entrada** | Precio/volumen minuto a minuto | Filas = observaciones, columnas = features |
+| **Decisión** | ¿Largo (1) o no (0)? | Clasificación binaria |
+| **Éxito en clase** | Entiendes falsas compras y backtest | Entiendes train/val, CV y Grid Search |
 
 ## 1.2 Enfoque de modelos (plantilla maestra de clasificación)
 
@@ -245,12 +319,17 @@ CV_SEED = 7
 print('Filas para modelado:', N_FILAS, '| Folds CV:', N_FOLDS, '| Seed:', CV_SEED)
 """))
 
-cells.append(md("""---
-## ⏱ Bloque A · Problema y datos (~25 min)
-<a id='1.2'></a>
+cells.append(block_intro(
+    "A",
+    "~25 min",
+    "Vamos a **cargar** el archivo de Bitstamp y **mirar** si los precios tienen sentido antes de calcular nada.",
+    "De dónde vienen los datos, cuántas filas hay y qué significa cada columna OHLCV.",
+    "¿Por qué cada fila es un minuto y por qué eso importa para la estrategia?",
+))
+cells.append(md("""<a id='1.2'></a>
 ### 2.2 Cargar datos
 
-> **Nota del libro:** en GitHub la muestra es pequeña por límite de tamaño; los números del PDF se reproducen con el CSV completo en Kaggle.
+> **Nota del libro:** la muestra en GitHub es pequeña; los resultados del PDF usan el CSV completo en [Kaggle](https://www.kaggle.com/mlfinancebook/bitstamp-bicoin-minutes-data).
 """))
 
 cells.append(step_md(
@@ -370,14 +449,20 @@ cells.append(code("""display(dataset.describe())
 cells.append(post_md(
     "Compara `count` con el número de filas. Anota min/max de `Close`.",
     ml="NaNs o outliers extremos pueden distorsionar indicadores y modelos.",
+    concluye="Si `count` < filas, hay missing data; la limpieza del bloque B lo tratará.",
 ))
 
 cells.append(md("""> **Actividad A1 (3 min):** *¿Por qué no entrenar con toda la serie desde 2012 en Colab free?* (memoria, tiempo, cambio de régimen).
 """))
 
-cells.append(md("""---
-## ⏱ Bloque B · Preparación (~50 min)
-<a id='3'></a>
+cells.append(block_intro(
+    "B",
+    "~50 min",
+    "Preparamos la tabla que el ML consumirá: limpiar → **crear la etiqueta signal (SMA)** → calcular indicadores → quitar columnas que harían trampa.",
+    "Qué es `signal`, qué entra en **X**, y por qué quitamos las SMA de la etiqueta antes de entrenar.",
+    "Si el modelo viera `short_mavg` en X, ¿estaría aprendiendo o copiando la regla?",
+))
+cells.append(md("""<a id='3'></a>
 # 4. Preparación de datos
 <a id='3.1'></a>
 ## 4.1 Limpieza de datos
@@ -461,10 +546,13 @@ dataset[['Close', 'short_mavg', 'long_mavg']].tail(3)
 
 cells.append(step_md(
     "Paso B3.3", "Crear etiqueta `signal`",
-    "1 si SMA corta > SMA larga; 0 en caso contrario.",
-    "Nueva columna `signal` con valores 0.0 y 1.0.",
-    trading="1 ≈ régimen alcista de corto plazo (estar largo en la demo).",
-    ml="Esta columna será nuestra variable objetivo $Y$.",
+    "Crea la columna `signal`: 1.0 si `short_mavg > long_mavg`, si no 0.0.",
+    "Columna `signal` solo con 0.0 y 1.0; en `tail` ves 0/1 junto a las medias.",
+    trading="**1 = en este minuto la regla SMA dice ‘entorno alcista de corto plazo’** (en la demo = estar largo). **0 = no.**",
+    ml="**Esta columna es Y (la verdad que el modelo intentará predecir).** No confundir con la predicción ŷ (viene mucho más adelante).",
+    objetivo="Tener la variable objetivo Y definida de forma reproducible (misma regla que fin-ml).",
+    en_palabras="Traducimos el cruce de medias en un sí/no numérico para que sklearn pueda entrenar.",
+    anota="En tus palabras: signal=1 significa _______________; signal=0 significa _______________.",
 ))
 
 cells.append(code("""dataset['signal'] = np.where(dataset['short_mavg'] > dataset['long_mavg'], 1.0, 0.0)
@@ -521,17 +609,16 @@ cells.append(code("""def EMA(df, n):
 """))
 
 for n, tip in [
-    (10, "Tendencia muy corta (~10 min)."),
-    (30, "Tendencia intermedia (~30 min)."),
-    (200, "Tendencia lenta (~200 min en datos de 1 min)."),
+    (10, "Si Close > EMA10, el precio va por encima de la tendencia muy reciente."),
+    (30, "Compara el precio con el consenso de ~30 minutos."),
+    (200, "Tendencia lenta: útil para ver si el minuto actual va ‘con’ o ‘contra’ el tramo largo."),
 ]:
-    cells.append(step_md(
-        f"Paso B4.1.{n}", f"Columna EMA{n}",
-        f"Calcula y guarda `EMA{n}` en el dataset.",
-        f"Último valor de EMA{n} impreso.",
-        trading=tip,
-        ml="Entra luego en la matriz $X$.",
-    ))
+    feature_step(
+        f"Paso B4.1.{n}",
+        f"EMA{n}",
+        f"`dataset['EMA{n}'] = EMA(dataset, {n})` usando la función del paso anterior.",
+        tip,
+    )
     cells.append(code(f"""dataset['EMA{n}'] = EMA(dataset, {n})
 print('EMA{n} (último):', round(float(dataset['EMA{n}'].iloc[-1]), 2))
 """))
@@ -551,12 +638,12 @@ cells.append(code("""def ROC(df, n):
 """))
 
 for n in (10, 30):
-    cells.append(step_md(
-        f"Paso B4.2.{n}", f"Columna ROC{n}",
-        f"Aplica ROC al cierre con ventana {n}.",
-        f"Valor reciente de ROC{n}.",
-        trading="Magnitud del movimiento reciente en %.",
-    ))
+    feature_step(
+        f"Paso B4.2.{n}",
+        f"ROC{n}",
+        f"Porcentaje de cambio del Close respecto a hace {n} minutos.",
+        f"ROC{n} > 0 ⇒ el precio subió en ese horizonte; ROC{n} < 0 ⇒ bajó.",
+    )
     cells.append(code(f"""dataset['ROC{n}'] = ROC(dataset['Close'], {n})
 print('ROC{n} (último):', round(float(dataset['ROC{n}'].iloc[-1]), 3))
 """))
@@ -574,11 +661,12 @@ cells.append(code("""def MOM(df, n):
 """))
 
 for n in (10, 30):
-    cells.append(step_md(
-        f"Paso B4.3.{n}", f"Columna MOM{n}",
-        f"Diferencia de Close vs hace {n} minutos.",
-        f"Último MOM{n}.",
-    ))
+    feature_step(
+        f"Paso B4.3.{n}",
+        f"MOM{n}",
+        f"Diferencia de precio Close(t) − Close(t−{n}).",
+        f"MOM{n} positivo ⇒ precio subió {n} minutos; negativo ⇒ bajó.",
+    )
     cells.append(code(f"""dataset['MOM{n}'] = MOM(dataset['Close'], {n})
 print('MOM{n} (último):', round(float(dataset['MOM{n}'].iloc[-1]), 2))
 """))
@@ -605,11 +693,12 @@ cells.append(code("""def RSI(series, period):
 """))
 
 for n in (10, 30, 200):
-    cells.append(step_md(
-        f"Paso B4.4.{n}", f"Columna RSI{n}",
-        f"RSI del cierre con periodo {n}.",
-        f"RSI{n} entre 0 y 100 (último valor).",
-    ))
+    feature_step(
+        f"Paso B4.4.{n}",
+        f"RSI{n}",
+        f"Índice de fuerza relativa con ventana {n} (fórmula del repo).",
+        f"RSI{n} cerca de 70+ ⇒ muchas subidas recientes; cerca de 30− ⇒ muchas caídas (lectura clásica).",
+    )
     cells.append(code(f"""dataset['RSI{n}'] = RSI(dataset['Close'], {n})
 print('RSI{n} (último):', round(float(dataset['RSI{n}'].iloc[-1]), 2))
 """))
@@ -755,9 +844,23 @@ cells.append(md("""<a id='3.7'></a>
 En el libro, **StandardScaler** (media 0, varianza 1) ayuda a modelos sensibles a escala (KNN, redes, SVM). En el notebook original se usa al **Grid Search** del Random Forest; el modelo final se entrena sobre `X_train` sin escalar — replicamos ese comportamiento.
 """))
 
-cells.append(md("""---
-## ⏱ Bloque C · Modelos (~40 min)
-<a id='4'></a>
+cells.append(md("""**✓ Fin del bloque B — checklist explícito**
+
+- [ ] Existe columna **`signal`** (0/1) y sé qué significa en trading.
+- [ ] Calculé indicadores; **`short_mavg` / `long_mavg` ya NO están** en X (las eliminamos).
+- [ ] Sé cuántas filas quedan tras `dropna`.
+
+Si algún ítem no lo tienes claro, **vuelve al paso B3 o B5** antes del bloque C.
+"""))
+
+cells.append(block_intro(
+    "C",
+    "~40 min",
+    "Separamos **Y** y **X**, partimos train/validation y **comparamos algoritmos** con validación cruzada (sin mirar validation todavía para elegir).",
+    "Qué es train vs validation, qué mide CV, y cuál modelo candidato llevar al Grid Search (casi siempre RF).",
+    "¿Por qué no entrenamos y evaluamos en las mismas filas si queremos saber si funciona en el futuro?",
+))
+cells.append(md("""<a id='4'></a>
 # 5. Evaluar algoritmos y modelos
 
 ### Vista unificada: del precio Bitcoin a la predicción
@@ -797,9 +900,13 @@ print('Filas para modelado:', n_use)
 
 cells.append(step_md(
     "Paso C1.2", "Variable objetivo Y",
-    "Extrae la columna `signal` como etiqueta.",
-    "Tamaño de `Y` y media (proporción de unos).",
-    ml="$Y \\in \\{0,1\\}$ — clasificación binaria.",
+    "Asigna `Y = subset_dataset['signal']` — solo la columna etiqueta.",
+    "Imprime shape de Y y **P(Y=1)** (proporción de minutos con signal=1).",
+    trading="P(Y=1) alto ⇒ en esta ventana la regla SMA estuvo ‘larga’ la mayor parte del tiempo.",
+    ml="**Y es lo que el modelo debe predecir.** No incluyas Y dentro de X.",
+    objetivo="Separar claramente etiqueta vs predictores.",
+    en_palabras="Y es la respuesta correcta del examen; X son las pistas.",
+    anota="P(Y=1) en mi muestra = _____ (escribe el número impreso).",
 ))
 
 cells.append(code("""Y = subset_dataset['signal']
@@ -820,9 +927,13 @@ print('Features:', list(X.columns))
 
 cells.append(step_md(
     "Paso C1.4", "Partición train / validation",
-    "80% train, 20% validation (`random_state=1`, fin-ml).",
-    "Shapes de train y validation.",
-    ml="Validation simula datos no usados al ajustar hiperparámetros finales.",
+    "`train_test_split(X, Y, test_size=0.2, random_state=1)` — **80% train, 20% validation**.",
+    "Imprime shapes; train debe tener ~80% de las filas de X.",
+    trading="Train = minutos donde ‘estudiamos’; validation = minutos donde ‘probamos’ sin haber estudiado esas filas al entrenar.",
+    ml="**Nunca ajustes el modelo final mirando solo train**; validation es el primer hold-out honesto (aunque el split no es temporal estricto).",
+    objetivo="Tener cuatro objetos: X_train, X_validation, Y_train, Y_validation.",
+    en_palabras="Separamos el examen en parte para practicar (train) y parte sorpresa (validation).",
+    anota="Train tiene _____ filas; validation tiene _____ filas (escribe los números).",
 ))
 
 cells.append(code("""validation_size = 0.2
@@ -1108,9 +1219,14 @@ cells.append(md("""**Interpretación (10 min discusión):** ¿Cuál gana en **me
 > **Actividad C1 (5 min):** cambien `scoring` a `'recall'` y vuelvan a correr **solo** la celda del benchmark. ¿Cambia el ranking? ¿Por qué importa para una estrategia long?
 """))
 
-cells.append(md("""---
-## ⏱ Bloque D · Grid y modelo final (~40 min)
-<a id='5'></a>
+cells.append(block_intro(
+    "D",
+    "~40 min",
+    "Afinamos **Random Forest** (Grid Search), entrenamos el modelo final, lo evaluamos en **validation** y vemos **qué indicadores pesan más**.",
+    "Los mejores hiperparámetros, accuracy en validation, y qué significa cada celda de la matriz de confusión en dinero simulado.",
+    "¿El Grid optimiza ganancias o solo accuracy? (respuesta: solo la métrica `scoring`, por defecto accuracy).",
+))
+cells.append(md("""<a id='5'></a>
 # 6. Ajuste fino y Grid Search
 
 ### Paso a paso — Grid Search (modelos)
@@ -1308,11 +1424,16 @@ sns.heatmap(df_cm, cmap='Blues', annot=True, annot_kws={'size': 16})
 plt.show()
 """))
 
-cells.append(md("""**Interpretación matriz de confusión:**
+cells.append(md("""**Matriz de confusión — traducción explícita (long-only)**
 
-- **Falsos positivos (FP):** modelo dice compra y la regla SMA decía venta → operaciones perdedoras potenciales.
-- **Falsos negativos (FN):** pierdes subidas.
-- Si operas **long-only**, muchos FP pueden destruir el PnL aunque accuracy sea alta.
+| | **Predicho 0** (no largo) | **Predicho 1** (largo) |
+|---|---------------------------|-------------------------|
+| **Real 0** | TN — acierto, evitamos compra mala | **FP — falsa compra** (el modelo compra cuando SMA decía no) |
+| **Real 1** | **FN — perdimos subida** | TP — acierto, coincidimos con SMA alcista |
+
+- **Accuracy alta** puede ocultar muchos **FP** (compras malas).
+- **Precision** de clase 1 ≈ “cuando digo compra, ¿cuántas veces acierto?”.
+- **Recall** de clase 1 ≈ “de todos los minutos buenos (SMA=1), ¿cuántos capturo?”.
 """))
 
 cells.append(md("""<a id='6.2'></a>
@@ -1362,9 +1483,14 @@ dump(model, open(filename, 'wb'))
 print('Modelo guardado:', filename)
 """))
 
-cells.append(md("""---
-## ⏱ Bloque E · Backtesting y cierre (~25 min)
-<a id='7'></a>
+cells.append(block_intro(
+    "E",
+    "~25 min",
+    "Convertimos predicciones 0/1 en **retornos minuto a minuto** y comparamos **estrategia ML vs regla SMA** (con un minuto de retraso).",
+    "Si la curva acumulada del ML queda arriba o abajo de la SMA, y qué falta (comisiones, split temporal) para confiar en dinero real.",
+    "¿Por qué multiplicamos retorno × señal de t−1 y no de t?",
+))
+cells.append(md("""<a id='7'></a>
 # 8. Backtesting
 
 ### Paso a paso — simulación (aplicación Bitcoin)
@@ -1424,9 +1550,13 @@ backtestdata[['Market Returns']].head(3)
 
 cells.append(step_md(
     "Paso E3", "Retorno estrategia SMA (benchmark)",
-    "Market return × señal SMA en t−1 (`shift(1)`).",
-    "Columna `Actual Returns`.",
-    trading="Simula seguir la regla SMA con un minuto de lag.",
+    "`Actual Returns = Market Returns * signal_actual.shift(1)`.",
+    "Columna `Actual Returns`; primera fila suele ser NaN por el lag.",
+    trading="**Interpretación:** solo gano el retorno del minuto t si **ayer (t−1) la SMA decía estar largo (1).** Es la referencia del libro.",
+    ml="No usamos ML aquí; es el baseline para comparar.",
+    objetivo="Tener la curva de PnL de la regla SMA en el mismo hold-out que el modelo.",
+    en_palabras="Si la SMA decía ‘sí’ el minuto anterior, me quedo expuesto al movimiento de este minuto.",
+    anota="¿Actual Returns y Market Returns son iguales en algún minuto? ¿Cuándo son cero?",
 ))
 
 cells.append(code("""backtestdata['Actual Returns'] = backtestdata['Market Returns'] * backtestdata['signal_actual'].shift(1)

@@ -8,7 +8,7 @@
 
 ## Durante la sesión
 
-Cada celda markdown sigue el formato **Qué hace / Qué mirar / Lectura trading / Lectura ML**. **No saltar** celdas de texto: son la narración de la clase. Indicadores: un cálculo por celda (EMA10, EMA30, …). Benchmark: **un modelo por celda** (LR, LDA, …).
+Proyecte la celda **Objetivo / En palabras simples / tabla / Confirma por escrito** antes de cada código. Obligue a rellenar los “Anota: _____” en B3, C1 y E. Use los **checklists** al fin del bloque B y la **matriz traducida** en D.
 
 | Min | Acción |
 |-----|--------|
