@@ -1,0 +1,381 @@
+---
+title: "Modelos de aprendizaje supervisado"
+subtitle: "Clase 11 · Clasificación aplicada a señales en mercados"
+author: "Machine Learning para finanzas y economía"
+institute: "FCEA · Pontificia Universidad Javeriana Cali"
+date: last-modified
+date-format: "D [de] MMMM [de] YYYY"
+lang: es
+format:
+  revealjs:
+    theme: [default, pandas-mono.scss]
+    width: 1280
+    height: 720
+    margin: 0.07
+    slide-number: c/t
+    show-slide-number: all
+    footer: "Clase 11 · Modelos supervisados · ML para finanzas y economía"
+    transition: fade
+    transition-speed: fast
+    background-transition: fade
+    progress: true
+    history: true
+    center: false
+    preview-links: auto
+    highlight-style: github
+    code-copy: true
+    code-overflow: wrap
+    embed-resources: true
+    include-in-header:
+      - text: |
+          <link href="https://fonts.googleapis.com/css2?family=Josefin+Sans:wght@400;600;700&family=Montserrat:wght@300;400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+---
+
+## Hoja de ruta {.chico}
+
+::::: columns
+:::: {.column width="50%"}
+::: {.chico}
+[01]{.pildora} **Supervisado** · qué aprendemos y con qué datos
+
+[02]{.pildora} **Clasificación** · etiquetas 0/1 en finanzas
+
+[03]{.pildora} **Pipeline** · del precio a la predicción
+
+[04]{.pildora} **Features** · indicadores y la variable objetivo
+:::
+::::
+
+:::: {.column width="50%"}
+::: {.chico}
+[05]{.pildora} **Validación** · train, hold-out y CV
+
+[06]{.pildora} **Algoritmos** · nueve familias del capítulo 6
+
+[07]{.pildora} **Métricas e hiperparámetros** · qué optimizar
+
+[08]{.pildora} **Práctica** · notebook Bitcoin en Colab + Drive
+:::
+
+::: {.callout-tip title="Material de clase"}
+Cuaderno: `Bitcoin_Estrategia_Clasificacion_Colab.ipynb` (misma carpeta). Los datos se leen desde **Google Drive** (`RUTA_CSV`).
+:::
+::::
+:::::
+
+# 01 · Aprendizaje supervisado {.seccion background-color="#0086AB"}
+
+::: {.bajada}
+Tenemos ejemplos históricos con respuesta conocida. El modelo aprende a imitar esa respuesta en datos nuevos.
+:::
+
+## La idea en una frase
+
+En **aprendizaje supervisado** cada observación trae un par $(X, y)$: características $X$ y etiqueta $y$ que ya conocemos en el entrenamiento.
+
+::: {.fragment}
+En finanzas $X$ puede ser precios, volúmenes, ratios o indicadores técnicos. $y$ puede ser «¿sube el mercado mañana?», «¿default en 12 meses?» o «¿régimen alcista en este minuto?».
+:::
+
+::: {.fragment}
+El objetivo no es memorizar el pasado. Es una **regla** $f(X)$ que generalice cuando lleguen filas que el modelo no vio al entrenar.
+:::
+
+## Regresión frente a clasificación
+
+::: {.chico}
+| Tipo | Salida $y$ | Ejemplo en mercados |
+|---|---|---|
+| **Regresión** | número continuo | retorno del próximo mes, spread, volatilidad |
+| **Clasificación** | categoría (0/1, A/B/C) | compra/venta, default/no default, recesión sí/no |
+| **Clasificación binaria** | dos clases | la más habitual en señales long/short simplificadas |
+:::
+
+Esta clase se concentra en **clasificación binaria**: $y \in \{0, 1\}$.
+
+## Por qué importa en trading cuantitativo
+
+::: {.incremental .chico}
+- Convierte una intuición («¿estoy alcista?») en una **variable medible**.
+- Permite comparar **reglas clásicas** (medias móviles) con **modelos ML** en la misma métrica.
+- Abre la puerta al **backtest**: simular PnL antes de arriesgar capital.
+- Obliga a hablar de **errores** (falsas compras, subidas perdidas), no solo de accuracy.
+:::
+
+::: {.callout-note title="Lectura recomendada"}
+*Tatsat, Puri y Lookabaugh*, *Machine Learning and Data Science Blueprints for Finance*, capítulos de aprendizaje supervisado y casos de clasificación (p. ej. estrategia con Bitcoin).
+:::
+
+# 02 · Clasificación en mercados {.seccion background-color="#0086AB"}
+
+::: {.bajada}
+Primero se define la pregunta de negocio. Después se traduce en 0 y 1.
+:::
+
+## Del objetivo de inversión a la etiqueta
+
+Pregunta típica: «¿Conviene estar **largo** en este minuto?»
+
+En el caso Bitcoin del curso la **etiqueta de referencia** es una regla interpretable:
+
+$$y_t = \mathbb{1}\{\mathrm{SMA}_{10}(\mathrm{Close})_t > \mathrm{SMA}_{60}(\mathrm{Close})_t\}$$
+
+::: {.fragment}
+**1** ≈ régimen alcista de corto plazo (media rápida arriba de la lenta). **0** ≈ no largo en la demo.
+:::
+
+::: {.fragment}
+El ML **no sustituye** esa definición: aprende $f(X_t) \approx y_t$ usando **muchos indicadores** a la vez (RSI, ROC, EMA, estocástico…).
+:::
+
+## Dos hilos que van juntos
+
+::::: columns
+:::: {.column width="50%"}
+::: {.tarjeta}
+**Trading**
+Precio minuto a minuto → señal 0/1 → posición → retorno simulado con lag.
+:::
+::::
+:::: {.column width="50%"}
+::: {.tarjeta}
+**Machine learning**
+Matriz $X$, vector $y$ → entrenar → validar → elegir modelo → reportar en hold-out.
+:::
+::::
+:::::
+
+::: {.fragment}
+Alta **accuracy** no garantiza ganancias. El **backtest** y la **matriz de confusión** traducen errores a dinero simulado.
+:::
+
+# 03 · Pipeline de clasificación {.seccion background-color="#0086AB"}
+
+::: {.bajada}
+Mismo esqueleto en casi todos los proyectos del libro: datos → features → split → modelos → ajuste → evaluación.
+:::
+
+## Los siete pasos
+
+::: {.incremental .chico}
+1. **EDA** — entender filas, NaNs, rangos y balance de clases.
+2. **Preparación** — limpiar, crear $y$, construir $X$.
+3. **Partición** — train / validation (y test si hay).
+4. **Benchmark** — validación cruzada sobre train; comparar algoritmos.
+5. **Grid Search** — afinar hiperparámetros del ganador (p. ej. Random Forest).
+6. **Modelo final** — reentrenar, métricas en validation, matriz de confusión.
+7. **Persistencia y backtest** — guardar modelo y simular estrategia.
+:::
+
+## Qué es cada conjunto
+
+::: {.chico}
+| Conjunto | Para qué sirve | Error típico |
+|---|---|---|
+| **Train** | Ajustar coeficientes o árboles | Entrenar y evaluar en el mismo sitio |
+| **Validation** | Elegir modelo e hiperparámetros | Mirar validation muchas veces sin recordarlo |
+| **Test** (si existe) | Una sola evaluación final | Usar test para iterar |
+:::
+
+En el notebook de clase usamos **80 % train / 20 % validation** (`random_state=1`).
+
+# 04 · Datos y features {.seccion background-color="#0086AB"}
+
+::: {.bajada}
+OHLCV en minutos. Indicadores técnicos. Nada de etiqueta dentro de $X$.
+:::
+
+## Entrada: Bitstamp en minutos
+
+Cada fila es un **minuto**: `Open`, `High`, `Low`, `Close`, volumen, precio ponderado.
+
+::: {.fragment}
+En Colab el CSV vive en **Google Drive**. Antes de modelar: montar Drive, fijar `RUTA_CSV`, comprobar que el archivo existe, luego `read_csv`.
+:::
+
+## Construcción de $y$ y de $X$
+
+**$y$** = columna `signal` (regla SMA 10 vs 60).
+
+**$X$** = resto de columnas numéricas útiles: `Close`, volumen, EMA, ROC, MOM, RSI, estocástico, medias…
+
+::: {.callout-important title="Evitar trampa de datos"}
+Las columnas `short_mavg` y `long_mavg` **solo sirven para crear** `signal`. Se **eliminan** de $X$ antes de entrenar. Si no, el modelo copiaría la regla trivialmente.
+:::
+
+## Ingeniería de características (familias)
+
+::: {.chico}
+| Familia | Intuición en trading |
+|---|---|
+| **Tendencia** (EMA, MA) | precio vs consenso reciente |
+| **Momentum** (ROC, MOM) | velocidad del movimiento |
+| **RSI / estocástico** | fuerza o posición en el rango |
+| **Volumen / precio** | contexto de liquidez y nivel |
+:::
+
+Ventanas largas generan NaN al inicio; se eliminan filas incompletas antes del modelado.
+
+# 05 · Validación {.seccion background-color="#0086AB"}
+
+::: {.bajada}
+Medir generalización sin mirar el futuro con optimismo.
+:::
+
+## Validación cruzada (K-fold)
+
+Partimos **train** en $K$ bloques. En cada fold entrenamos en $K-1$ y medimos en el restante. Promediamos el **scoring** (p. ej. accuracy).
+
+::: {.fragment}
+En modo ligero del notebook: **3 folds**. En modo completo: **10 folds**. La semilla `CV_SEED` fija reproducibilidad.
+:::
+
+## Sobreajuste en una imagen
+
+Si la curva de **train** mejora y la de **CV** empeora al subir `max_depth` (árbol) o bajar regularización (logística), el modelo **memoriza** ruido minuto a minuto.
+
+::: {.callout-caution title="Split aleatorio vs temporal"}
+El notebook usa split aleatorio estratificado (como muchos ejemplos didácticos). En producción conviene **validación temporal** o walk-forward: entrenar solo con el pasado.
+:::
+
+# 06 · Algoritmos de clasificación {.seccion background-color="#0086AB"}
+
+::: {.bajada}
+Nueve candidatos en el benchmark completo. Cinco en modo ligero.
+:::
+
+## Mapa rápido
+
+::: {.chico}
+| Sigla | Modelo | Idea en una línea |
+|---|---|---|
+| **LR** | Regresión logística | combinación lineal → probabilidad con sigmoide |
+| **LDA** | Discriminante lineal | frontera lineal, covarianza compartida |
+| **KNN** | k-vecinos | voto de vecinos cercanos en el espacio de features |
+| **CART** | Árbol de decisión | reglas del tipo «si RSI < x entonces…» |
+| **NB** | Naive Bayes | probabilidades con supuesto de independencia |
+| **NN** | Red neuronal (MLP) | capas ocultas no lineales |
+| **AB** | AdaBoost | suma secuencial de clasificadores débiles |
+| **GBM** | Gradient boosting | corrige errores con árboles pequeños |
+| **RF** | Random Forest | muchos árboles en submuestras (bagging) |
+:::
+
+## Tres familias que suelen ganar en series ruidosas
+
+::::: columns
+:::: {.column width="33%"}
+::: {.tarjeta}
+**Árboles y bosques**
+Capturan interacciones (RSI bajo **y** ROC positivo). Riesgo: profundidad excesiva → sobreajuste.
+:::
+::::
+:::: {.column width="33%"}
+::: {.tarjeta}
+**Boosting (GBM, AdaBoost)**
+Mejora iterativa. Sensible a hiperparámetros (`n_estimators`, `learning_rate`).
+:::
+::::
+:::: {.column width="33%"}
+::: {.tarjeta}
+**Lineales (LR, LDA)**
+Rápidos e interpretables. Sufren si hay mucha colinealidad entre indicadores.
+:::
+::::
+:::::
+
+En el caso Bitcoin del curso, **Random Forest** suele encabezar el benchmark y recibe el **Grid Search**.
+
+# 07 · Métricas e hiperparámetros {.seccion background-color="#0086AB"}
+
+::: {.bajada}
+Accuracy no basta cuando las clases están desbalanceadas o cuando operas long-only.
+:::
+
+## Métricas de clasificación
+
+::: {.chico}
+| Métrica | Fórmula (clase 1) | Lectura en long-only |
+|---|---|---|
+| **Accuracy** | $(TP+TN)/N$ | engañosa si hay 90 % de unos |
+| **Precision** | $TP/(TP+FP)$ | calidad de las «compras» predichas |
+| **Recall** | $TP/(TP+FN)$ | cuántas subidas capturamos |
+| **AUC-ROC** | ranking de scores | útil si usas probabilidades |
+:::
+
+## Matriz de confusión en palabras
+
+**TN:** acierto en «no largo». **TP:** acierto en «largo».
+
+**FP (falsa compra):** el modelo dice 1 y la SMA decía 0 — operación mala potencial.
+
+**FN:** perdimos un minuto alcista según la SMA.
+
+## Hiperparámetros que más se discuten
+
+::: {.incremental .chico}
+- **LR:** `C` (regularización; C alto → más flexible).
+- **CART / RF:** `max_depth`, `n_estimators`, `criterion` (Gini vs entropía).
+- **GBM:** `n_estimators`, `learning_rate`.
+- **KNN:** `n_neighbors` (k pequeño → frontera ruidosa).
+:::
+
+**Grid Search** prueba combinaciones en malla sobre **train escalado** (RF en el notebook). El modelo final se entrena en **train sin escalar** — detalle didáctico a tener presente al comparar con otros proyectos.
+
+# 08 · Del modelo al backtest {.seccion background-color="#0086AB"}
+
+::: {.bajada}
+Predicción 0/1 → retorno minuto a minuto → curva acumulada ML vs SMA.
+:::
+
+## Evaluación final
+
+1. Reentrenar RF con `best_params_` en todo **train**.
+2. Predecir en **validation** → accuracy, reporte, heatmap de confusión.
+3. **Importancia de variables:** qué indicadores usa el bosque (no implica causalidad).
+
+## Backtest didáctico
+
+$$\text{StrategyReturn}_t = r_t \times \hat{y}_{t-1}$$
+
+Retorno de mercado $r_t$ multiplicado por la señal **del minuto anterior** (evita usar la misma barra).
+
+Comparamos con la misma regla aplicada a la **señal SMA** (`signal_actual`).
+
+::: {.callout-important title="Limitaciones explícitas"}
+Sin comisiones, slippage, tamaño de posición ni short. Suma simple de retornos, no log-PnL. Sirve para **comparar** ML vs benchmark en clase, no para prometer alpha real.
+:::
+
+## Cómo practicar en Colab
+
+::: {.incremental .chico}
+1. Subir CSV a Drive y editar **`RUTA_CSV`** (Paso A2).
+2. **`MODO_LIGERO = True`** para primera corrida; `False` para benchmark completo.
+3. Ejecutar **celda a celda** en partes A–B; luego acelerar si ya entiendes train/val.
+4. Anotar: balance de `signal`, ganador del boxplot CV, `best_params_`, quién gana en el gráfico acumulado.
+:::
+
+# Cierre {.seccion background-color="#0086AB"}
+
+::: {.bajada}
+Formular bien $y$ y $X$ importa tanto como elegir el algoritmo.
+:::
+
+## Lo que debe quedar claro
+
+::: {.incremental .chico}
+- **Supervisado** = aprender $f(X)$ con ejemplos $(X, y)$ históricos.
+- **Clasificación binaria** = señales 0/1; en clase, SMA define $y$, ML predice $y$ con features.
+- **Validación** = train + CV + hold-out; no confundir con backtest.
+- **Métricas** = precision/recall cuando operas largo; accuracy sola puede engañar.
+- **RF + Grid** = flujo estándar del capítulo; interpretar heatmap y matriz de confusión.
+:::
+
+## Para seguir
+
+[01]{.pildora} Repasar el cuaderno `Bitcoin_Estrategia_Clasificacion_Colab.ipynb`.
+
+[02]{.pildora} Probar `scoring = 'precision'` o `'recall'` en el benchmark.
+
+[03]{.pildora} CSV más grande en Drive + `MODO_LIGERO = False`.
+
+[04]{.pildora} Leer en el libro el capítulo de clasificación y el estudio Bitcoin con esta presentación al lado.

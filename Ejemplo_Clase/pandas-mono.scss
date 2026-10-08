@@ -1,0 +1,593 @@
+/*-- scss:defaults --*/
+
+// =====================================================================
+//  Tema "mono" para Quarto Revealjs
+//  Inspirado en style_mono_quarto() de {quartomonothemer}
+//  (Kazuharu Yanagimoto — Non-designer's Quarto Presentation)
+//  Regla 70 : 25 : 5  →  blanco : color base : acento
+// =====================================================================
+
+// ---------- Paleta ----------
+$color-base:        #0086AB;   // 25% — color principal (títulos, líneas, acentos)
+$color-base-dark:   #00637F;
+$color-base-mid:    #4FB3CC;
+$color-base-soft:   #D9EEF5;
+$color-base-faint:  #F1F9FC;
+$color-acento:      #E70488;   //  5% — solo para resaltar lo imprescindible
+$color-acento-soft: #FCE4F1;
+$color-gris:        #6C757D;
+$color-gris-soft:   #F4F5F6;
+$color-gris-line:   #E3E6E8;
+
+// ---------- Tipografías ----------
+$font-family-sans-serif: "Montserrat", "Segoe UI", sans-serif !default;
+$font-family-monospace:  "Fira Code", "Cascadia Mono", monospace !default;
+$presentation-heading-font: "Josefin Sans", "Montserrat", sans-serif !default;
+
+$presentation-font-size-root: 29px !default;
+$presentation-line-height: 1.35 !default;
+
+// ---------- Colores base ----------
+$body-bg:    #FFFFFF !default;
+$body-color: #2B2F33 !default;
+$link-color: $color-base !default;
+$link-color-hover: $color-acento !default;
+$selection-bg: $color-base-soft !default;
+$selection-color: $body-color !default;
+
+// ---------- Encabezados ----------
+$presentation-heading-color: $color-base !default;
+$presentation-heading-font-weight: 600 !default;
+$presentation-heading-line-height: 1.15 !default;
+$h1-font-size: 1.70em !default;
+$h2-font-size: 1.28em !default;
+$h3-font-size: 1.10em !default;
+$h4-font-size: 1.00em !default;
+
+// ---------- Código ----------
+$code-color: $color-base-dark !default;
+$code-bg: $color-base-faint !default;
+$code-block-bg: #FCFDFE !default;
+$code-block-border-color: $color-gris-line !default;
+$code-block-font-size: 0.60em !default;
+
+// ---------- Callouts ----------
+$callout-border-width: 5px !default;
+$callout-color-note: $color-base !default;
+$callout-color-tip: #2E8B6B !default;
+$callout-color-important: $color-acento !default;
+$callout-color-caution: #D98324 !default;
+
+
+/*-- scss:rules --*/
+
+// Tipografías de Google (se cargan también desde el <head> del .qmd)
+@import url("https://fonts.googleapis.com/css2?family=Josefin+Sans:wght@400;600;700&family=Montserrat:wght@300;400;500;600;700&family=Fira+Code:wght@400;500&display=swap");
+
+// =====================================================================
+//  Estructura general
+// =====================================================================
+
+.reveal .slides section {
+  text-align: left;
+}
+
+.reveal h2 {
+  margin-bottom: 0.65em;
+  padding-bottom: 0.22em;
+  border-bottom: 3px solid $color-base-soft;
+  letter-spacing: 0.01em;
+}
+
+.reveal h3 {
+  color: $color-base-dark;
+  font-weight: 600;
+  margin-bottom: 0.35em;
+}
+
+.reveal h4 {
+  color: $color-gris;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.72em;
+  margin-bottom: 0.3em;
+}
+
+.reveal p,
+.reveal li {
+  font-weight: 400;
+}
+
+.reveal ul,
+.reveal ol {
+  margin-left: 0.6em;
+}
+
+.reveal li {
+  margin-bottom: 0.32em;
+}
+
+.reveal ul li::marker {
+  color: $color-base-mid;
+}
+
+.reveal strong {
+  color: $color-base-dark;
+  font-weight: 600;
+}
+
+.reveal em {
+  color: $color-gris;
+}
+
+// =====================================================================
+//  Portada
+// =====================================================================
+
+#title-slide {
+  text-align: left;
+  padding-left: 0.6em;
+  border-left: 10px solid $color-base;
+
+  .title {
+    font-family: $presentation-heading-font;
+    font-size: 2.05em;
+    font-weight: 700;
+    color: $color-base;
+    line-height: 1.05;
+    margin-bottom: 0.15em;
+  }
+
+  .subtitle {
+    font-size: 0.92em;
+    font-weight: 400;
+    color: $color-gris;
+    margin-bottom: 1.1em;
+  }
+
+  .quarto-title-authors {
+    display: block;
+    padding-top: 0;
+  }
+
+  .quarto-title-author {
+    padding: 0;
+    text-align: left;
+  }
+
+  .quarto-title-author-name {
+    font-size: 0.72em;
+    font-weight: 600;
+    color: $body-color;
+  }
+
+  .quarto-title-affiliation {
+    font-size: 0.6em;
+    color: $color-gris;
+  }
+
+  .date {
+    font-size: 0.6em;
+    color: $color-gris;
+    margin-top: 0.6em;
+  }
+}
+
+// =====================================================================
+//  Diapositivas de sección (fondo a color completo)
+// =====================================================================
+
+.reveal section.seccion,
+.reveal section.has-dark-background {
+  h1, h2, h3, p, li, strong, em {
+    color: #FFFFFF;
+  }
+
+  h1 {
+    border: none;
+    font-size: 1.9em;
+    font-weight: 700;
+    margin-bottom: 0.25em;
+  }
+
+  h2 {
+    border-bottom: 2px solid rgba(255, 255, 255, 0.35);
+  }
+
+  ul li::marker {
+    color: rgba(255, 255, 255, 0.6);
+  }
+
+  .bajada {
+    color: rgba(255, 255, 255, 0.85);
+    font-size: 0.78em;
+    border-left: 4px solid rgba(255, 255, 255, 0.5);
+    padding-left: 0.8em;
+    margin-top: 0.4em;
+  }
+
+  code:not(pre code) {
+    background-color: rgba(255, 255, 255, 0.18);
+    color: #FFFFFF;
+  }
+}
+
+// Pie y numeración legibles sobre el fondo a color
+.reveal.has-dark-background {
+  .footer,
+  .footer p,
+  .slide-number,
+  .controls {
+    color: rgba(255, 255, 255, 0.75);
+  }
+}
+
+// =====================================================================
+//  Código
+// =====================================================================
+
+.reveal div.sourceCode {
+  border: 1px solid $code-block-border-color;
+  border-left: 4px solid $color-base-mid;
+  border-radius: 4px;
+  background-color: $code-block-bg;
+}
+
+.reveal pre code {
+  padding: 0.6em 0.8em;
+  line-height: 1.45;
+}
+
+.reveal code:not(pre code) {
+  background-color: $code-bg;
+  color: $code-color;
+  padding: 0.08em 0.3em;
+  border-radius: 3px;
+  font-size: 0.86em;
+}
+
+// Resaltado de líneas (code-line-numbers)
+.reveal .sourceCode .code-annotation-code,
+.reveal pre.sourceCode code .highlight-line {
+  background-color: $color-acento-soft;
+}
+
+// Salida de texto plano (print / repr)
+.reveal pre:not(.sourceCode),
+.reveal .cell-output pre {
+  font-family: $font-family-monospace;
+  font-size: 0.5em;
+  line-height: 1.3;
+  max-height: 470px;
+  background-color: $color-gris-soft;
+  border: none;
+  border-left: 4px solid $color-gris-line;
+  border-radius: 4px;
+  box-shadow: none;
+  padding: 0.5em 0.7em;
+}
+
+.reveal .cell-output-stderr {
+  display: none;
+}
+
+// =====================================================================
+//  Tablas de pandas
+// =====================================================================
+
+.reveal table.dataframe {
+  font-family: $font-family-monospace;
+  font-size: 0.46em;
+  border-collapse: collapse;
+  margin: 0.2em 0;
+  width: auto;
+
+  thead th {
+    background-color: $color-base-soft;
+    color: $color-base-dark;
+    font-weight: 600;
+    border: none;
+    border-bottom: 2px solid $color-base-mid;
+    padding: 0.35em 0.6em;
+    text-align: right;
+  }
+
+  tbody th {
+    color: $color-base-dark;
+    font-weight: 600;
+    text-align: left;
+    padding: 0.28em 0.6em;
+    border: none;
+  }
+
+  tbody td {
+    padding: 0.28em 0.6em;
+    border: none;
+    text-align: right;
+  }
+
+  tbody tr {
+    border-bottom: 1px solid $color-gris-line;
+  }
+
+  tbody tr:hover {
+    background-color: $color-base-faint;
+  }
+}
+
+.reveal .cell-output-display > div {
+  overflow-x: auto;
+}
+
+// El "5 rows × 11 columns" que imprime pandas debajo de la tabla
+.reveal .cell-output-display > div > p {
+  font-size: 0.45em;
+  color: $color-gris;
+  margin: 0.2em 0 0 0;
+}
+
+// Tablas markdown normales
+.reveal table:not(.dataframe) {
+  font-size: 0.68em;
+  border-collapse: collapse;
+
+  th {
+    background-color: $color-base-soft;
+    color: $color-base-dark;
+    border: none;
+    border-bottom: 2px solid $color-base-mid;
+  }
+
+  td {
+    border: none;
+    border-bottom: 1px solid $color-gris-line;
+  }
+}
+
+// =====================================================================
+//  Citas
+// =====================================================================
+
+.reveal blockquote {
+  border-left: 5px solid $color-base-mid;
+  background-color: $color-base-faint;
+  box-shadow: none;
+  font-style: normal;
+  font-size: 0.85em;
+  padding: 0.7em 1em;
+  margin: 0.6em 0;
+  width: 100%;
+}
+
+// =====================================================================
+//  Componentes propios
+// =====================================================================
+
+// --- Tarjetas ---
+.tarjetas {
+  display: flex;
+  gap: 0.7em;
+  margin-top: 0.5em;
+}
+
+.tarjeta {
+  flex: 1;
+  background-color: $color-base-faint;
+  border: 1px solid $color-gris-line;
+  border-top: 4px solid $color-base;
+  border-radius: 5px;
+  padding: 0.7em 0.8em;
+  font-size: 0.72em;
+  line-height: 1.35;
+
+  .tarjeta-titulo {
+    font-family: $presentation-heading-font;
+    font-weight: 700;
+    color: $color-base;
+    font-size: 1.12em;
+    margin-bottom: 0.25em;
+  }
+
+  code {
+    font-size: 0.9em;
+  }
+}
+
+.tarjeta.acento {
+  border-top-color: $color-acento;
+  background-color: $color-acento-soft;
+
+  .tarjeta-titulo {
+    color: $color-acento;
+  }
+}
+
+// --- Etiquetas / píldoras ---
+.pildora {
+  display: inline-block;
+  background-color: $color-base;
+  color: #FFFFFF;
+  font-family: $presentation-heading-font;
+  font-weight: 600;
+  font-size: 0.62em;
+  letter-spacing: 0.04em;
+  padding: 0.15em 0.7em;
+  border-radius: 999px;
+  margin-right: 0.3em;
+}
+
+.pildora.acento {
+  background-color: $color-acento;
+}
+
+.pildora.gris {
+  background-color: $color-gris;
+}
+
+// --- Diagrama Series / DataFrame ---
+.diagrama {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1.1em;
+  margin-top: 0.4em;
+}
+
+.diagrama .conector {
+  font-family: $presentation-heading-font;
+  font-size: 1.6em;
+  font-weight: 700;
+  color: $color-base-mid;
+}
+
+.bloque {
+  text-align: center;
+
+  .bloque-etiqueta {
+    font-family: $presentation-heading-font;
+    font-weight: 700;
+    color: $color-base;
+    font-size: 0.7em;
+    margin-bottom: 0.3em;
+    letter-spacing: 0.03em;
+  }
+
+  .bloque-nota {
+    font-size: 0.5em;
+    color: $color-gris;
+    margin-top: 0.3em;
+  }
+}
+
+table.rejilla {
+  border-collapse: collapse;
+  font-family: $font-family-monospace;
+  font-size: 0.52em;
+  margin: 0 auto;
+
+  th {
+    background-color: $color-base;
+    color: #FFFFFF;
+    font-weight: 600;
+    padding: 0.3em 0.75em;
+    border: 1px solid #FFFFFF;
+  }
+
+  td {
+    background-color: $color-base-faint;
+    color: $body-color;
+    padding: 0.3em 0.75em;
+    border: 1px solid #FFFFFF;
+    text-align: center;
+  }
+
+  td.indice {
+    background-color: $color-gris-soft;
+    color: $color-gris;
+    font-weight: 600;
+  }
+
+  .destacada td,
+  td.destacada {
+    background-color: $color-acento-soft;
+    color: $color-acento;
+    font-weight: 600;
+  }
+}
+
+// --- Chuleta final ---
+.chuleta {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.55em;
+  font-size: 0.6em;
+  margin-top: 0.3em;
+}
+
+.chuleta > div {
+  background-color: $color-base-faint;
+  border-left: 3px solid $color-base-mid;
+  border-radius: 3px;
+  padding: 0.45em 0.6em;
+  line-height: 1.4;
+}
+
+.chuleta b {
+  font-family: $presentation-heading-font;
+  color: $color-base;
+  display: block;
+  font-size: 1.05em;
+  margin-bottom: 0.15em;
+}
+
+// --- Ayudas de tamaño ---
+.grande  { font-size: 1.25em; }
+.chico   { font-size: 0.78em; }
+.mini    { font-size: 0.62em; }
+.centro  { text-align: center; }
+.acento-txt { color: $color-acento; font-weight: 600; }
+.gris-txt   { color: $color-gris; }
+
+// =====================================================================
+//  Callouts
+// =====================================================================
+
+.reveal .callout {
+  font-size: 0.78em;
+  border-radius: 4px;
+  margin: 0.5em 0;
+}
+
+.reveal .callout.callout-style-default .callout-title {
+  font-family: $presentation-heading-font;
+  font-weight: 600;
+  padding: 0.25em 0.6em;
+}
+
+.reveal .callout .callout-body-container {
+  padding: 0.3em 0.6em;
+}
+
+// =====================================================================
+//  Pie de página, numeración y barra de progreso
+// =====================================================================
+
+.reveal .footer {
+  font-size: 0.42em;
+  color: $color-gris;
+  letter-spacing: 0.03em;
+}
+
+.reveal .slide-number {
+  font-family: $presentation-heading-font;
+  font-size: 0.45em;
+  font-weight: 600;
+  background-color: transparent;
+  color: $color-base-mid;
+}
+
+.reveal .progress {
+  color: $color-base;
+  height: 4px;
+}
+
+.reveal .controls {
+  color: $color-base-mid;
+}
+
+// Figuras — se limita la altura para que nunca invadan el pie de página
+.reveal .figure img,
+.reveal .cell-output-display img {
+  display: block;
+  margin: 0 auto;
+  max-height: 370px;
+  max-width: 100%;
+  width: auto;
+}
+
+.reveal figcaption {
+  font-size: 0.5em;
+  color: $color-gris;
+  text-align: center;
+}

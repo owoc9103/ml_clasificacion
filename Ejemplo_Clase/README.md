@@ -5,6 +5,8 @@
 | Archivo | Descripción |
 |---------|-------------|
 | `Bitcoin_Estrategia_Clasificacion_Colab.ipynb` | Notebook Colab (~240 celdas), explícito y atomizado |
+| `Clase_11_Modelos_Supervisados.qmd` | Presentación Reveal.js (modelos supervisados / clasificación) |
+| `compilar.ps1` | Genera `Clase_11_Modelos_Supervisados.html` con Quarto |
 | `_build_notebook.py` | Generador del `.ipynb` (editar y ejecutar para regenerar) |
 | `data/BitstampData_sample.csv` | Muestra local opcional (en clase se usa **Google Drive**) |
 
