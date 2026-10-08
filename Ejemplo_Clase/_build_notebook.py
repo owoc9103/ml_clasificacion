@@ -58,14 +58,39 @@ cells.append(md("""## Contenido del cuaderno
 cells.append(md("""<a id='0'></a>
 # 1. Definición del problema
 
-El caso de estudio plantea **clasificación binaria**:
+## 1.1 Enfoque de la aplicación (Bitcoin / trading)
 
-- **1 (compra / posición larga):** la media móvil **corta** del precio está **por encima** de la media **larga** → se espera momentum alcista de corto plazo.
-- **0 (venta / fuera del mercado):** lo contrario.
+| Paso | Qué hacemos | Para qué sirve en trading |
+|------|-------------|---------------------------|
+| 1 | Cargar OHLCV minuto a minuto (Bitstamp) | Tener la serie de precios y liquidez |
+| 2 | Limpiar y ordenar en el tiempo | Evitar señales con huecos falsos |
+| 3 | Definir **etiqueta** con SMA 10 vs SMA 60 | Traducir “¿estoy alcista de corto plazo?” en 0/1 |
+| 4 | Construir **indicadores** (RSI, estocástico, etc.) | Dar al ML pistas de tendencia y momentum |
+| 5 | Entrenar clasificadores | Aproximar (y a veces mejorar) la regla SMA |
+| 6 | Elegir modelo + hiperparámetros | Balance entre acierto y estabilidad |
+| 7 | Evaluar en **validación** (matriz de confusión) | Ver falsas compras vs subidas perdidas |
+| 8 | **Backtest** simple | Simular PnL antes de arriesgar capital |
 
-Los modelos no “adivinan” el futuro: aprenden a mapear **indicadores técnicos** (tendencia, momentum, sobrecompra/sobreventa) hacia esa regla de referencia. En producción real habría que añadir costos, desfase temporal estricto y validación walk-forward.
+**Señal de referencia (libro / fin-ml):**
 
-**Datos:** Bitstamp (Bitcoin), frecuencia minutos. En GitHub viene una **muestra**; el libro usa el archivo completo en [Kaggle — Bitstamp minutes](https://www.kaggle.com/mlfinancebook/bitstamp-bicoin-minutes-data).
+- **1 = compra / largo:** SMA₁₀(Close) > SMA₆₀(Close).
+- **0 = no largo:** en caso contrario.
+
+El ML **no sustituye** esa idea: aprende una función $f(X_t) \\approx \\text{signal}_t$ usando muchos indicadores a la vez.
+
+## 1.2 Enfoque de modelos (plantilla maestra de clasificación)
+
+| Paso ML | Sección del notebook | Idea |
+|---------|----------------------|------|
+| 1 | EDA | Entender datos antes de modelar |
+| 2 | Preparación | $Y$ = signal, $X$ = indicadores |
+| 3 | Train / validation split | Medir generalización |
+| 4 | Validación cruzada | Comparar algoritmos sin mirar el test |
+| 5 | Grid Search | Ajustar hiperparámetros del ganador |
+| 6 | Modelo final + métricas | Reportar en hold-out |
+| 7 | Persistencia + backtest | Cerrar el ciclo “investigación → decisión” |
+
+**Datos:** muestra en GitHub; números del PDF con [Kaggle — Bitstamp minutes](https://www.kaggle.com/mlfinancebook/bitstamp-bicoin-minutes-data).
 """))
 
 cells.append(md("""<a id='1'></a>
@@ -166,6 +191,18 @@ if dataset is None:
 assert dataset is not None
 """))
 
+cells.append(md("""### Paso a paso — qué es cada columna (Bitcoin)
+
+| Columna | Significado en mercado |
+|---------|-------------------------|
+| `Open`, `High`, `Low`, `Close` | Precio en ese minuto (vela de 1 min) |
+| `Volume_(BTC)` | Cantidad negociada en BTC (liquidez relativa) |
+| `Volume_(Currency)` | Volumen en moneda fiat (se elimina más adelante en el repo) |
+| `Weighted_Price` | Precio promedio ponderado del minuto |
+
+Cada **fila = un minuto**. La estrategia del libro decide en cada minuto si el régimen es “alcista de corto plazo” (etiqueta) usando medias e indicadores **calculados solo con información hasta ese minuto** (cuidado con *look-ahead* en proyectos propios).
+"""))
+
 cells.append(code("""# EDA compacto (clase): forma + cola + describe en una pasada
 try:
     from IPython.display import display
@@ -213,9 +250,16 @@ En el master template (crédito alemán) se codifican variables categóricas. **
 cells.append(md("""<a id='3.3'></a>
 ## 4.3 Preparar datos para clasificación
 
-Etiqueta según cruce de medias móviles simples (SMA), como en el repo:
+### Paso a paso — construcción de la etiqueta (aplicación)
+
+1. **Elegir ventanas:** 10 min (corto) y 60 min (largo).
+2. **Calcular SMA** sobre `Close`.
+3. **Comparar:** corto > largo → etiqueta **1** (régimen alcista de corto plazo).
+4. **Operativa:** 1 ≈ “estar largo”; 0 ≈ “no largo” (sin short explícito en el caso base).
 
 $$\\text{signal}_t = \\mathbb{1}\\{\\text{SMA}_{10}(P)_t > \\text{SMA}_{60}(P)_t\\}$$
+
+Las SMA usadas para etiquetar se **eliminan** de $X$ antes de entrenar para evitar copiar la regla trivialmente.
 """))
 
 cells.append(code("""# Create short / long simple moving average
@@ -240,7 +284,17 @@ cells.append(md("""> **Actividad B1 (5 min):** si la clase 1 tiene > 55 %, ¿qu�
 cells.append(md("""<a id='3.4'></a>
 ## 4.4 Ingeniería de características — indicadores técnicos
 
-Mismo bloque funcional que el notebook de GitHub: EMA, ROC, momentum, RSI, estocástico (%K, %D) y medias móviles adicionales (MA21, MA63, MA252).
+### Paso a paso — para qué sirve cada familia (Bitcoin)
+
+| Familia | Variables (ej.) | Lectura en trading |
+|---------|-----------------|---------------------|
+| **Tendencia** | EMA10/30/200, MA21/63/252 | Precio vs media: ¿vamos arriba o abajo del consenso? |
+| **Momentum** | MOM10/30, ROC10/30 | Velocidad del cambio de precio (% o diferencia) |
+| **Sobrecompra/sobreventa** | RSI10/30/200 | RSI alto → muchas subidas recientes; bajo → muchas caídas |
+| **Estocástico** | %K, %D | Posición del cierre dentro del rango High–Low reciente |
+| **Liquidez / nivel** | `Close`, `Volume_(BTC)`, `Weighted_Price` | Contexto de precio y actividad |
+
+La celda siguiente calcula **exactamente** las mismas funciones que el notebook oficial (EMA, ROC, MOM, RSI, estocástico, MA).
 """))
 
 cells.append(code("""# calculation of exponential moving average
@@ -356,10 +410,28 @@ cells.append(md("""---
 ## ⏱ Bloque C · Modelos (~40 min)
 <a id='4'></a>
 # 5. Evaluar algoritmos y modelos
+
+### Vista unificada: del precio Bitcoin a la predicción
+
+```
+Precio minuto a minuto → indicadores X_t → modelo → ŷ_t (0/1)
+                                              ↓
+                         comparar con signal_t (SMA) en validación
+                                              ↓
+                         backtest: retorno × ŷ_{t-1}
+```
+
 <a id='4.1'></a>
 ## 5.1 Partición entrenamiento / validación
 
-Misma lógica que fin-ml: **últimas `N_FILAS`**, 80 % train / 20 % validation, `random_state=1`.
+### Paso a paso (ML)
+
+1. Tomar las **últimas `N_FILAS`** (mercado reciente).
+2. Separar **Y** = `signal`, **X** = resto de columnas numéricas.
+3. **80 % train** → ajustar modelos; **20 % validation** → simular “futuro” no visto en el ajuste.
+4. `stratify=Y` mantiene proporción de 0/1 en ambos conjuntos.
+
+Misma lógica que fin-ml: `random_state=1`.
 """))
 
 cells.append(code("""n_use = min(N_FILAS, len(dataset))
@@ -398,10 +470,29 @@ cells.append(md("""**Métricas (libro, cap. 6):**
 - **AUC-ROC:** calidad del ranking de probabilidades.
 
 Para estrategias **long-only**, a menudo se discute precision vs recall (ver conclusión del notebook original).
+
+### Paso a paso — validación cruzada (qué hace el código después)
+
+1. Partir **train** en `N_FOLDS` bloques temporales aleatorios (KFold).
+2. En cada fold: entrenar en k−1 bloques, medir accuracy en el bloque restante.
+3. Promediar → estimación de error **sin usar validation**.
+4. Repetir para cada algoritmo → **boxplot** al final del bloque C.
 """))
 
 cells.append(md("""<a id='4.3'></a>
 ## 5.3 Guía de modelos e hiperparámetros
+
+### Paso a paso — algoritmos en **modo clase** (qué aprende cada uno)
+
+| Modelo | Entrada | Salida | En Bitcoin, intuitivamente… |
+|--------|---------|--------|-----------------------------|
+| **LR** | Vector $X_t$ | $P(\\text{compra})$ | Combinación lineal de RSI, ROC… → probabilidad de régimen alcista |
+| **LDA** | $X_t$ | Clase 0/1 | Frontera lineal; baseline rápido |
+| **CART** | $X_t$ | 0/1 | Reglas del tipo “si RSI < 30 y ROC > 0 → compra” |
+| **GBM** | $X_t$ | 0/1 | Corrige errores de árboles pequeños secuencialmente |
+| **RF** | $X_t$ | 0/1 | Muchos árboles en submuestras → robustez al ruido minuto a minuto |
+
+En **modo completo** (`MODO_CLASE_3H = False`) se añaden KNN, NB, NN, AdaBoost como en fin-ml.
 
 | Código | Modelo | Idea (Blueprints) | Hiperparámetro clave | Si lo subes demasiado… |
 |--------|--------|-------------------|----------------------|-------------------------|
@@ -452,8 +543,15 @@ cells.append(md("""**Cómo leer los gráficos:** si la curva de *train* sube y l
 cells.append(md("""<a id='4.4'></a>
 ## 5.4 Comparar modelos
 
-- **Modo clase:** 5 modelos representativos (rápido, ~8–12 min de CPU en Colab).
-- **Modo completo:** los 9 del notebook Bitcoin (LDA, NB, NN, AB incluidos).
+### Paso a paso — lectura del benchmark
+
+1. Ejecutar la celda que define la **lista `models`**.
+2. Ejecutar el **bucle CV**: imprime `media (desv. estándar)` por modelo.
+3. Ejecutar el **boxplot**: cada caja = distribución de accuracy en folds.
+4. **Elegir candidato** para Grid Search (en el libro: Random Forest).
+
+- **Modo clase:** 5 modelos (~8–12 min Colab).
+- **Modo completo:** 9 modelos (fin-ml).
 """))
 
 cells.append(code("""models = []
@@ -507,7 +605,19 @@ cells.append(md("""---
 <a id='5'></a>
 # 6. Ajuste fino y Grid Search
 
-Random Forest + malla como en fin-ml (reducida en modo clase).
+### Paso a paso — Grid Search (modelos)
+
+1. **Elegir familia:** Random Forest (suele ganar en el caso del libro).
+2. **Definir malla:** `n_estimators`, `max_depth`, `criterion` (Gini vs entropía).
+3. **Escalar X_train** con `StandardScaler` (como fin-ml en esta etapa).
+4. **GridSearchCV** prueba cada combinación × cada fold → guarda `best_params_`.
+5. **Interpretar heatmap:** celdas similares = zona robusta; pico aislado = cuidado.
+
+### Paso a paso — hiperparámetros RF en lenguaje Bitcoin
+
+- **`n_estimators`:** más árboles → menos varianza, más tiempo de cómputo.
+- **`max_depth`:** árboles más profundos → captan micro-patrones del minuto (riesgo de sobreajuste).
+- **`criterion`:** forma de medir “pureza” de cada split (Gini vs entropía); impacto suele ser menor que la profundidad.
 """))
 
 cells.append(code("""# Grid Search: Random Forest (fin-ml)
@@ -559,7 +669,15 @@ cells.append(md("""<a id='6'></a>
 cells.append(md("""<a id='6.1'></a>
 ## 7.1 Resultados en el conjunto de validación
 
-Parámetros ganadores del grid (como en el repo); entrenamiento sobre **X_train sin escalar** (mismo código que fin-ml).
+### Paso a paso — evaluación final (ML + trading)
+
+1. **Reentrenar** RF con `best_params_` sobre todo **X_train** (sin escalar → igual que fin-ml).
+2. **Predecir** en **X_validation** → vector `predictions`.
+3. **Accuracy / reporte:** calidad global de clasificación.
+4. **Matriz de confusión:** traducir TP/FP a “compras acertadas” vs “falsas alarmas”.
+5. **Importancia de variables:** qué indicadores usa el bosque para imitar/mejorar la SMA.
+
+Parámetros ganadores del grid; entrenamiento sobre **X_train sin escalar** (mismo código que fin-ml).
 """))
 
 cells.append(code("""# Usar mejores hiperparámetros del grid (fin-ml fija a mano; aquí tomamos el grid)
@@ -626,7 +744,17 @@ cells.append(md("""---
 <a id='7'></a>
 # 8. Backtesting
 
-Retorno × señal con **`.shift(1)`** (operas con la señal conocida al cierre anterior).
+### Paso a paso — simulación (aplicación Bitcoin)
+
+1. **`Market Returns`** = $\\frac{P_t - P_{t-1}}{P_{t-1}}$ (retorno del BTC en ese minuto).
+2. **`signal_actual`** = etiqueta SMA (referencia “benchmark” del libro).
+3. **`signal_pred`** = predicción del Random Forest.
+4. **Posición con lag:** usamos `shift(1)` → la señal de $t-1$ multiplica el retorno de $t$ (evita usar la señal del mismo minuto del retorno en esta demo).
+5. **`Strategy Returns`** = retorno de mercado × señal predicha (0 o 1) → simula estar largo solo cuando el modelo dice 1.
+6. **`Actual Returns`** = mismo esquema con la señal SMA → comparar ML vs regla original.
+7. **Gráfico acumulado:** suma simple de retornos (didáctico; en producción usar log-returns, comisiones y slippage).
+
+Retorno × señal con **`.shift(1)`** como en fin-ml.
 """))
 
 cells.append(code("""backtestdata = pd.DataFrame(index=X_validation.index)

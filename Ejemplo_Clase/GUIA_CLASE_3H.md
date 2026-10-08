@@ -8,13 +8,15 @@
 
 ## Durante la sesión
 
+Use las tablas **“Paso a paso — aplicación”** y **“Paso a paso — modelos”** del notebook: en cada bloque, lea la tabla antes de ejecutar código (2–3 min de narración).
+
 | Min | Acción |
 |-----|--------|
-| 0–25 | Bloque A: problema + carga + EDA compacto + Actividad A1 |
-| 25–75 | Bloque B: limpieza → SMA → indicadores (celda larga: dejar correr) → correlación + Actividad B1 |
-| 75–115 | Bloque C: split → métricas → gráficos hiperparámetros → benchmark 5 modelos + Actividad C1 (recall) |
-| 115–155 | Bloque D: grid RF → validación → importancia → guardar modelo |
-| 155–180 | Bloque E: backtest + conclusión + mencionar sección 9 (tarea) |
+| 0–25 | Bloque A: tablas §1.1–1.2 + carga + glosario columnas + EDA + Actividad A1 |
+| 25–75 | Bloque B: limpieza → pasos etiqueta SMA → tabla indicadores → correlación + Actividad B1 |
+| 75–115 | Bloque C: diagrama X→ŷ → split → CV paso a paso → tabla algoritmos → benchmark + Actividad C1 |
+| 115–155 | Bloque D: grid paso a paso → validación/confusión → importancia → guardar |
+| 155–180 | Bloque E: backtest 7 pasos + conclusión + sección 9 (tarea) |
 
 ## Si se atrasa
 
